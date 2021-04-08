@@ -8,8 +8,7 @@ import ddf.minim.*;
 
 
 
-// Ljud
-Minim minim;
+// Lju//Minim minim;
 SoundManager soundManager;
 
 boolean debugOn = false;

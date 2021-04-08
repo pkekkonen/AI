@@ -29,6 +29,7 @@ class Tank extends Sprite { //<>//
   PVector positionPrev; //spara temp senaste pos.
 
   Node startNode; // noden där tanken befinner sig.
+  Node currentNode;
 
   boolean hasTarget; // Används just nu för att kunna köra "manuellt" (ai har normalt target).
   PVector targetPosition; // Används vid förflyttning mot target.
@@ -52,6 +53,7 @@ class Tank extends Sprite { //<>//
   boolean stop_state;
   boolean stop_turning_state;
   boolean stop_turret_turning_state;
+  boolean patrolling;
 
   boolean idle_state; // Kan användas när tanken inte har nåt att göra.
 
@@ -80,6 +82,10 @@ class Tank extends Sprite { //<>//
 
   protected ArrayList<Sensor> mySensors = new ArrayList<Sensor>();
 
+  // List of traversed areas
+  private HashMap<Node, Integer> patrolled = new HashMap<Node, Integer>();
+
+
   //**************************************************
   Tank(int id, Team team, PVector _startpos, float diameter, CannonBall ball) {
     println("*** NEW TANK(): [" + team.getId()+":"+id+"]");
@@ -97,7 +103,7 @@ class Tank extends Sprite { //<>//
     this.positionPrev = new PVector(this.position.x, this.position.y); //spara temp senaste pos.
     this.targetPosition = new PVector(this.position.x, this.position.y); // Tanks har alltid ett target.
 
-    //this.startNode = grid.getNearestNodePosition(this.startpos);
+    this.startNode = grid.getNearestNodePosition(this.startpos);
 
 
     if (this.team.getId() == 0) this.heading = radians(0); // "0" radians.
@@ -132,6 +138,7 @@ class Tank extends Sprite { //<>//
     this.rotation_speed = 0;
     this.image_scale = 0.5;
     this.isColliding = false;
+    this.patrolling = false;
 
 
     //this.img = loadImage("tankBody2.png");
@@ -493,7 +500,6 @@ class Tank extends Sprite { //<>//
     PVector steer = PVector.sub(desired, velocity);
     steer.limit(maxforce);  // Limit to maximum steering force
     applyForce(steer);
-
   }
 
   //**************************************************  
@@ -1186,4 +1192,65 @@ class Tank extends Sprite { //<>//
       }
     }
   }
-}
+
+  //************************************************************************************
+
+  void startPatrol() {
+    patrolling = true;
+    currentNode = startNode;
+    Node target;
+    PVector vectorTarget;
+    while (patrolling) {
+      if (grid.getNearestNode(position) == target) {
+        currentNode = target;
+        patrolled.put(target, -1);
+        assignCostValue();
+        target = getNextTarget();
+        vectorTarget = new PVector(target.x, target.y);
+      }
+      moveTo(vectorTarget);
+    }
+  }
+
+  int assignCostValue(Node n) {
+    patrolled.put(n, Integer.MAX_VALUE);
+    ArrayList<Node> neighbors = getNeighboringNodes(n);
+    for (Node temp : neighbors) {
+      if (!patrolled.containsKey(temp)) {
+        patrolled.put(n, 1);
+        backPropagate(n, 1);
+      } else if(patrolled.get(temp) < Integer.MAX_VALUE){
+          assignCostValue(temp);
+      }
+  }
+  } 
+  backPropagate(Node n, int i){
+    for(Node temp : getNeighboringNodes(n){
+      if(patrolled.containsKey(temp) && patrolled.get(temp) > i+1){
+        patrolled.put(temp, i+1);
+        backPropagate(temp, i+1);
+      }
+    }
+  }
+
+  ArrayList<Node> getNeighboringNodes(Node n) {
+    ArrayList<Node> neighbors = new ArrayList<Node>();
+    neighbors.addAll(
+      new Node(new PVector(n.x-n.w, n.y-n.h)), 
+        new Node(new PVector(n.x, n.y-n.h)), 
+        new Node(new PVector(n.x+n.w, n.y-n.h)), 
+        new Node(new PVector(n.x-n.w, n.y)), 
+        new Node(new PVector(n.x+n.w, n.y)), 
+        new Node(new PVector(n.x-n.w, n.y+n.h)), 
+        new Node(new PVector(n.x, n.y+n.h)), 
+        new Node(new PVector(n.x+n.w, n.y+n.h))
+    );
+  }
+
+  PVector getNextTarget(Node n) {
+    Node target; 
+      for (Node temp : getNeighboringNodes(n)) {
+      if (
+        if (target == null)
+    }
+  }
