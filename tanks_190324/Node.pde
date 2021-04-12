@@ -73,12 +73,12 @@ class Node {
         Node n = (Node) o;
           
         // Compare the data members and return accordingly 
-        return o.position.x == position.x && o.position.y == position.y;
+        return n.position.x == position.x && n.position.y == position.y;
     }
     
     @Override
     public int hashCode()
     {
-        return (x * y / 13 * angle * 7 * 149);
+        return ((int)x * (int)y / 13 * (int)angle * 7 * 149);
     }
 }

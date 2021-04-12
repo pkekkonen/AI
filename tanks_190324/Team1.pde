@@ -32,6 +32,7 @@ class Team1 extends Team {
     }
 
     public void initialize() {
+      super.startPatrol();
     }
 
     // Tanken meddelas om kollision med tree.

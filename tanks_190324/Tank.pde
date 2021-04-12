@@ -30,7 +30,7 @@ class Tank extends Sprite { //<>//
 
   Node startNode; // noden där tanken befinner sig.
   Node currentNode;
-
+  Node target;
   boolean hasTarget; // Används just nu för att kunna köra "manuellt" (ai har normalt target).
   PVector targetPosition; // Används vid förflyttning mot target.
   float targetHeading; // Används vid rotation mot en target.
@@ -103,7 +103,8 @@ class Tank extends Sprite { //<>//
     this.positionPrev = new PVector(this.position.x, this.position.y); //spara temp senaste pos.
     this.targetPosition = new PVector(this.position.x, this.position.y); // Tanks har alltid ett target.
 
-    this.startNode = grid.getNearestNodePosition(this.startpos);
+    this.startNode = grid.getNearestNode(this.startpos);
+    this.currentNode = startNode;
 
 
     if (this.team.getId() == 0) this.heading = radians(0); // "0" radians.
@@ -1195,62 +1196,93 @@ class Tank extends Sprite { //<>//
 
   //************************************************************************************
 
+  void getView() {
+    PVector viewForward = PVector.add(position, position);
+    PVector viewRight = PVector.add(position, new PVector(position.x, 0));
+    PVector viewLeft = PVector.sub(position, new PVector(position.x, 0));
+    ArrayList<Node> view = new ArrayList<Node>();
+    view.add(grid.getNearestNode(position));
+    view.add(grid.getNearestNode(viewForward));
+    view.add(grid.getNearestNode(viewLeft));
+    view.add(grid.getNearestNode(viewRight));
+    for (Node n : view) {
+      assignCostValue(n);
+    }
+  }
+
+
   void startPatrol() {
     patrolling = true;
-    currentNode = startNode;
-    Node target;
-    PVector vectorTarget;
+    getView();
+    Node target = getNextTarget(currentNode);
+    PVector vectorTarget = new PVector(target.x, target.y);
+    moveTo(vectorTarget);
     while (patrolling) {
-      if (grid.getNearestNode(position) == target) {
-        currentNode = target;
-        patrolled.put(target, -1);
-        assignCostValue();
-        target = getNextTarget();
-        vectorTarget = new PVector(target.x, target.y);
+      if (currentNode != grid.getNearestNode(position)) {
+        currentNode = grid.getNearestNode(position);
       }
+      getView();
+      target = getNextTarget(currentNode);
+      System.out.println(position);
+      vectorTarget = new PVector(target.x, target.y);
       moveTo(vectorTarget);
     }
   }
 
-  int assignCostValue(Node n) {
-    patrolled.put(n, Integer.MAX_VALUE);
+  void assignCostValue(Node n) {
+    patrolled.put(n, -1);
     ArrayList<Node> neighbors = getNeighboringNodes(n);
+    float r = this.diameter/2;
     for (Node temp : neighbors) {
       if (!patrolled.containsKey(temp)) {
-        patrolled.put(n, 1);
-        backPropagate(n, 1);
-      } else if(patrolled.get(temp) < Integer.MAX_VALUE){
-          assignCostValue(temp);
+        if ((temp.position.y+r >= height) || (temp.position.y-r <= 0) ||
+          (temp.position.x+r >= width) || (temp.position.x-r <= 0)) {
+          patrolled.put(temp, Integer.MAX_VALUE);
+        } else {
+          patrolled.put(n, 1);
+          backPropagate(n, 1);
+        }
+      } else if (patrolled.get(temp) > -1) {
+        assignCostValue(temp);
       }
-  }
+    }
   } 
-  backPropagate(Node n, int i){
-    for(Node temp : getNeighboringNodes(n){
-      if(patrolled.containsKey(temp) && patrolled.get(temp) > i+1){
-        patrolled.put(temp, i+1);
+  void backPropagate(Node n, int i) {
+    for (Node temp : getNeighboringNodes(n)) {
+      if (patrolled.containsKey(temp) && patrolled.get(temp) > i+1 && patrolled.get(temp) < Integer.MAX_VALUE) {
+        patrolled.put(temp, i+1); 
         backPropagate(temp, i+1);
       }
     }
   }
 
-  ArrayList<Node> getNeighboringNodes(Node n) {
-    ArrayList<Node> neighbors = new ArrayList<Node>();
-    neighbors.addAll(
-      new Node(new PVector(n.x-n.w, n.y-n.h)), 
-        new Node(new PVector(n.x, n.y-n.h)), 
-        new Node(new PVector(n.x+n.w, n.y-n.h)), 
-        new Node(new PVector(n.x-n.w, n.y)), 
-        new Node(new PVector(n.x+n.w, n.y)), 
-        new Node(new PVector(n.x-n.w, n.y+n.h)), 
-        new Node(new PVector(n.x, n.y+n.h)), 
-        new Node(new PVector(n.x+n.w, n.y+n.h))
-    );
+  ArrayList<Node> getNeighboringNodes(Node current) {
+    final Node n = current;
+    ArrayList<Node> neighbors = new ArrayList<Node>() {
+      {
+        add(new Node(n.x-n.w, n.y-n.h));
+        add(new Node(n.x, n.y-n.h));
+        add(new Node(n.x+n.w, n.y-n.h));
+        add(new Node(n.x-n.w, n.y));
+        add(new Node(n.x+n.w, n.y));
+        add(new Node(n.x-n.w, n.y+n.h)); 
+        add(new Node(n.x, n.y+n.h)); 
+        add(new Node(n.x+n.w, n.y+n.h));
+      }
+    };
+    return neighbors;
   }
 
-  PVector getNextTarget(Node n) {
-    Node target; 
-      for (Node temp : getNeighboringNodes(n)) {
-      if (
-        if (target == null)
+  Node getNextTarget(Node n) {
+    Node target = null; 
+    for (Node temp : getNeighboringNodes(n)) {
+      if (!patrolled.containsKey(temp)) {
+        return temp;
+      }
+      if (target == null || patrolled.get(temp) < patrolled.get(target)) {
+        target = temp;
+      }
     }
+    return target;
   }
+}
