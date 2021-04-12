@@ -1,4 +1,9 @@
-class Tank extends Sprite { //<>//
+import java.util.Comparator; //<>//
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.List;
+
+class Tank extends Sprite {
   int id;
   //String name; //Sprite
   int team_id;
@@ -1186,4 +1191,128 @@ class Tank extends Sprite { //<>//
       }
     }
   }
+  
+  
+  //*****************************
+  
+  
+  // using A* f(n) = g(n) + h(n)
+  void goHome() {
+    Queue<AStarNode> openQueue = new PriorityQueue<>(new HeuristicsComparator());
+    List<Node> closedList = new ArrayList<Node>(); //TODO: Or just a normal queue and only put the nodes in, not AStarNodes?
+    
+    openQueue.add(new AStarNode(this.startNode, 0, 0));
+    
+    while(!openQueue.isEmpty()) {
+      AStarNode current = openQueue.poll();
+      closedList.add(current.node);
+      
+      if(isHome(current)) {
+        //WE ARE DONE
+        takePath(closedList);
+        return;
+      }
+      
+      List<Node> children = new ArrayList<Node>();
+      //TODO: få närliggande som vi känner till från current 
+      
+      for(Node n: children) {
+        if(!closedList.contains(n)) {
+          double gValue = calculateGValue(current, n);
+          double hValue = calculateHeuristics(n);
+          double fValue = gValue+hValue;
+          
+          //Does openQueue contain the current node? If it does and the heuristic for that in the queue is lower, do nothing. Else, add this node heuristic instead
+          AStarNode nodeFromQueue = findAStarNode(n, openQueue);
+          if(nodeFromQueue != null ) {
+            if(nodeFromQueue.fValue > fValue) {
+              //Updating value, must remove and reinsert element so the priority is updated
+              openQueue.remove(nodeFromQueue);
+              nodeFromQueue.fValue = fValue;
+              openQueue.add(nodeFromQueue);
+            }
+          } else {
+            openQueue.add(new AStarNode(n, fValue, gValue));
+          }
+        }
+      }
+    }    
+  }
+  
+  // Returns the AStarNode in queue containing the Node node.
+  // Returns null if no such AStarNode exists.
+  AStarNode findAStarNode(Node node, Queue<AStarNode> queue) {
+    for(AStarNode n : queue) {
+      if(n.node.equals(node)) //TODO: KOLLA SÅ NODE HAR EQUALS METOD
+        return n;
+    }
+    return null;
+  }
+  
+
+  //TODO: implement
+  void takePath(List<Node> closedQueue) {
+  }  
+  
+    //TODO: implement
+  boolean isHome(AStarNode current) {
+    return false;
+  }
+ 
+  double calculateGValue(AStarNode a, Node b) {
+    double prevDist = a.gValue;
+    double newDist = Math.sqrt(Math.pow(a.node.x-b.x, 2)+Math.pow(a.node.y-b.y, 2));
+    return prevDist + newDist;
+  }
+  
+  //TODO: implement h(n)
+  //se till att admissiable, välj närmaste punkten hem
+  double calculateHeuristics(Node n) {
+    double x = targetPosition.x; //FÖRUTSATT ATT TARGETPOS ÄR SATT TILL HEMMABASEN
+    double y = targetPosition.y;
+    return Math.sqrt(Math.pow(x-n.x, 2)+Math.pow(y-n.y, 2));
+  }
+  
+  class AStarNode {
+    Node node;
+    double fValue;
+    double gValue;
+    
+    AStarNode(Node node, double fValue, double gValue) {
+      this.node = node;
+      this.fValue = fValue;
+      this.gValue = gValue;
+    }
+  }
+  
+  //Static?
+   class HeuristicsComparator implements Comparator<AStarNode> {
+        @Override
+        public int compare(AStarNode n1, AStarNode n2) {
+            return n1.fValue > n2.fValue ? 1 : -1;
+        }
+    }
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 }
