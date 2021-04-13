@@ -1289,7 +1289,6 @@ class Tank extends Sprite {
 
   // 
   void takePath() {
-
     if (pathHome.isEmpty()) {
       goingHome = false;
     } else if (okayToGoNextStepHome) {
@@ -1301,18 +1300,15 @@ class Tank extends Sprite {
 
   // Check if node is within homebase
   boolean isNodeInHomeBase(Node current) {
-    // OBS!! Har hårkodat in just nu att nod (2,6) är hem/goal pos
-    return current.col == 2 && current.row == 6;
-
-    //if (
-    //  current.x > team.homebase_x && 
-    //  current.x < team.homebase_x+team.homebase_width &&
-    //  current.y > team.homebase_y &&
-    //  current.y < team.homebase_y+team.homebase_height) {
-    //  return true;
-    //} else {
-    //  return false;
-    //}
+    if (
+      current.x > team.homebase_x && 
+      current.x <= team.homebase_x+team.homebase_width &&
+      current.y > team.homebase_y &&
+      current.y <= team.homebase_y+team.homebase_height) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   // real distance from start to current
@@ -1322,12 +1318,17 @@ class Tank extends Sprite {
     return prevDist + newDist;
   }
 
-  // using euclidean distance to calculate a heuristic for current node 
   double calculateHeuristics(Node n) {
-    // OBS!! Har hårkodat in just nu att nod (2,6) är hem/goal pos
-    double x = 150; 
-    double y = 350;
-    return Math.sqrt(Math.pow(x-n.x, 2)+Math.pow(y-n.y, 2));
+    
+    //If we think of the game plan as a coordinate system where the point (team.homebase_x+team.homebase_width, team.homebase_y+team.homebase_height) is origo,
+    //then the following if-statements determines whether the Node n is in the first, third or fourth quadrant and calculates accordingly
+    if(n.x <= team.homebase_x+team.homebase_width) { // n is in the third quadrant
+      return n.y-(team.homebase_y+team.homebase_height);
+    } else if(n.y <= team.homebase_y+team.homebase_height) { // n is in the first quadrant
+      return n.x-(team.homebase_x+team.homebase_width);
+    } else { // n is in the fourth quadrant; use euclidean distance to calculate distance to "origo"
+      return Math.sqrt(Math.pow((team.homebase_x+team.homebase_width)-n.x, 2)+Math.pow((team.homebase_y+team.homebase_height)-n.y, 2));
+    }
   }
 
   // container used for the A* algorithm
