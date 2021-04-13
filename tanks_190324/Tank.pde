@@ -1,7 +1,8 @@
-import java.util.Comparator; //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
+import java.util.LinkedList;
 
 class Tank extends Sprite {
   int id;
@@ -65,6 +66,8 @@ class Tank extends Sprite {
   boolean isColliding; // Tanken håller på att krocka.
   boolean isAtHomebase;
   boolean userControlled; // Om användaren har tagit över kontrollen.
+  boolean goingHome;
+  boolean okayToGoNextStepHome;
 
   boolean hasShot; // Tanken kan bara skjuta om den har laddat kanonen, hasShot=true.
   CannonBall ball;
@@ -85,6 +88,11 @@ class Tank extends Sprite {
 
   protected ArrayList<Sensor> mySensors = new ArrayList<Sensor>();
 
+  // List of traversed areas
+  private HashMap<Node, Integer> patrolled = new HashMap<Node, Integer>();
+
+  //Shortest path home 
+  private LinkedList<Node> pathHome = new LinkedList<Node>();
   //**************************************************
   Tank(int id, Team team, PVector _startpos, float diameter, CannonBall ball) {
     println("*** NEW TANK(): [" + team.getId()+":"+id+"]");
@@ -102,7 +110,7 @@ class Tank extends Sprite {
     this.positionPrev = new PVector(this.position.x, this.position.y); //spara temp senaste pos.
     this.targetPosition = new PVector(this.position.x, this.position.y); // Tanks har alltid ett target.
 
-    //this.startNode = grid.getNearestNodePosition(this.startpos);
+    this.startNode = grid.getNearestNode(this.startpos);
 
 
     if (this.team.getId() == 0) this.heading = radians(0); // "0" radians.
@@ -128,6 +136,8 @@ class Tank extends Sprite {
     this.isRotating = false;
     this.isAtHomebase = true;
     this.idle_state = true;
+    this.goingHome = false;
+    this.okayToGoNextStepHome = true;
 
     this.ball = ball;
     this.hasShot = false;
@@ -498,7 +508,6 @@ class Tank extends Sprite {
     PVector steer = PVector.sub(desired, velocity);
     steer.limit(maxforce);  // Limit to maximum steering force
     applyForce(steer);
-
   }
 
   //**************************************************  
@@ -821,6 +830,7 @@ class Tank extends Sprite {
   void arrived() {
     println("*** Tank["+ this.getId() + "].arrived()");
     this.isMoving = false;  
+    okayToGoNextStepHome = true;
     stopMoving_state();
   }
 
@@ -859,7 +869,13 @@ class Tank extends Sprite {
 
         // Om tanken är redo för handling och kan agera.
         if (!this.isImmobilized && this.isReady) {  
-
+          if (goingHome) {
+            takePath();
+          }
+          if (!isAtHomebase && !goingHome) {
+            System.out.println("GO HOME");
+            findShortestPathHome();
+          }
           // Om tanken är i rörelse.
           if (this.isMoving) {
 
@@ -1191,128 +1207,163 @@ class Tank extends Sprite {
       }
     }
   }
-  
-  
+
+
   //*****************************
-  
-  
+
   // using A* f(n) = g(n) + h(n)
-  void goHome() {
-    Queue<AStarNode> openQueue = new PriorityQueue<>(new HeuristicsComparator());
-    List<Node> closedList = new ArrayList<Node>(); //TODO: Or just a normal queue and only put the nodes in, not AStarNodes?
+  void findShortestPathHome() {
+    Queue<AStarNode> openQueue = new PriorityQueue<AStarNode>(new HeuristicsComparator());
+    LinkedList<Node> closedList = new LinkedList<Node>(); 
     
-    openQueue.add(new AStarNode(this.startNode, 0, 0));
-    
-    while(!openQueue.isEmpty()) {
+    //TODO: TA BORT SEN. Använder endast för att printa ut the final path med f value
+    LinkedList<AStarNode> closedListTABORTSEN = new LinkedList<AStarNode>(); 
+
+
+    openQueue.add(new AStarNode(this.startNode, calculateHeuristics(this.startNode), 0));
+
+    while (!openQueue.isEmpty()) {
+      System.out.println(openQueue);
       AStarNode current = openQueue.poll();
       closedList.add(current.node);
-      
-      if(isHome(current)) {
+      closedListTABORTSEN.add(current);
+
+
+      if (isNodeInHomeBase(current.node)) {
+        System.out.println("DONE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        System.out.println(closedListTABORTSEN);
+
         //WE ARE DONE
-        takePath(closedList);
+        goingHome = true;
+        pathHome = closedList;
         return;
       }
-      
-      List<Node> children = new ArrayList<Node>();
-      //TODO: få närliggande som vi känner till från current 
-      
-      for(Node n: children) {
-        if(!closedList.contains(n)) {
+
+      // få närliggande som vi känner till från current 
+      // ska ligga i patrolled
+      List<Node> children = grid.getNodesNeighbours(current.node);
+
+      for (Node n : children) {
+        if (patrolled.containsKey(n)) {
           double gValue = calculateGValue(current, n);
           double hValue = calculateHeuristics(n);
           double fValue = gValue+hValue;
-          
+
           //Does openQueue contain the current node? If it does and the heuristic for that in the queue is lower, do nothing. Else, add this node heuristic instead
-          AStarNode nodeFromQueue = findAStarNode(n, openQueue);
-          if(nodeFromQueue != null ) {
-            if(nodeFromQueue.fValue > fValue) {
+          AStarNode nodeFromOpenQueue = findAStarNode(n, openQueue);
+          if (!closedList.contains(n) && nodeFromOpenQueue != null ) {
+            if (nodeFromOpenQueue.gValue >= gValue) {
               //Updating value, must remove and reinsert element so the priority is updated
-              openQueue.remove(nodeFromQueue);
-              nodeFromQueue.fValue = fValue;
-              openQueue.add(nodeFromQueue);
+              openQueue.remove(nodeFromOpenQueue);
+              nodeFromOpenQueue.fValue = fValue;
+              nodeFromOpenQueue.gValue = gValue;
+              openQueue.add(nodeFromOpenQueue);
             }
           } else {
             openQueue.add(new AStarNode(n, fValue, gValue));
           }
         }
       }
-    }    
+    }
   }
-  
+
   // Returns the AStarNode in queue containing the Node node.
   // Returns null if no such AStarNode exists.
   AStarNode findAStarNode(Node node, Queue<AStarNode> queue) {
-    for(AStarNode n : queue) {
-      if(n.node.equals(node)) //TODO: KOLLA SÅ NODE HAR EQUALS METOD
+    for (AStarNode n : queue) {
+      if (n.node.equals(node))
         return n;
     }
     return null;
   }
-  
 
-  //TODO: implement
-  void takePath(List<Node> closedQueue) {
+  // 
+  void takePath() {
+
+    if (pathHome.isEmpty()) {
+      goingHome = false;
+    } else if (okayToGoNextStepHome) {
+      Node next = pathHome.poll();
+      okayToGoNextStepHome = false;
+      moveTo(next.x, next.y);
+    }
   }  
-  
-    //TODO: implement
-  boolean isHome(AStarNode current) {
-    return false;
+
+  // Check if node is within homebase
+  boolean isNodeInHomeBase(Node current) {
+    // OBS!! Har hårkodat in just nu att nod (2,6) är hem/goal pos
+    return current.col == 2 && current.row == 6;
+
+    //if (
+    //  current.x > team.homebase_x && 
+    //  current.x < team.homebase_x+team.homebase_width &&
+    //  current.y > team.homebase_y &&
+    //  current.y < team.homebase_y+team.homebase_height) {
+    //  return true;
+    //} else {
+    //  return false;
+    //}
   }
- 
+
+  // real distance from start to current
   double calculateGValue(AStarNode a, Node b) {
     double prevDist = a.gValue;
     double newDist = Math.sqrt(Math.pow(a.node.x-b.x, 2)+Math.pow(a.node.y-b.y, 2));
     return prevDist + newDist;
   }
-  
-  //TODO: implement h(n)
-  //se till att admissiable, välj närmaste punkten hem
+
+  // using euclidean distance to calculate a heuristic for current node 
   double calculateHeuristics(Node n) {
-    double x = targetPosition.x; //FÖRUTSATT ATT TARGETPOS ÄR SATT TILL HEMMABASEN
-    double y = targetPosition.y;
+    // OBS!! Har hårkodat in just nu att nod (2,6) är hem/goal pos
+    double x = 150; 
+    double y = 350;
     return Math.sqrt(Math.pow(x-n.x, 2)+Math.pow(y-n.y, 2));
   }
-  
+
+  // container used for the A* algorithm
   class AStarNode {
     Node node;
     double fValue;
     double gValue;
-    
+
     AStarNode(Node node, double fValue, double gValue) {
       this.node = node;
       this.fValue = fValue;
       this.gValue = gValue;
     }
-  }
-  
-  //Static?
-   class HeuristicsComparator implements Comparator<AStarNode> {
-        @Override
-        public int compare(AStarNode n1, AStarNode n2) {
-            return n1.fValue > n2.fValue ? 1 : -1;
-        }
+    @Override
+      public String toString() {
+      return "(" + node.col +  ", "+ node.row  + ")" + " + " + "(" +fValue+ "), ";
     }
-  
-  
-  
+  }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  //Static?
+  class HeuristicsComparator implements Comparator<AStarNode> {
+    @Override
+      public int compare(AStarNode n1, AStarNode n2) {
+      return n1.fValue > n2.fValue ? 1 : -1;
+    }
+  }
+
+
+  void testByAddingPatrolledNodes() {
+    //SHORTEST
+    patrolled.put(grid.nodes[2][6], 0);
+    patrolled.put(grid.nodes[2][7], 0);
+    patrolled.put(grid.nodes[2][8], 0); // but should skip this one
+    patrolled.put(grid.nodes[3][8], 0);
+    patrolled.put(grid.nodes[4][8], 0);
+    patrolled.put(grid.nodes[5][9], 0);
+    patrolled.put(grid.nodes[6][10], 0);
+
+
+    //Longer path
+    patrolled.put(grid.nodes[6][9], 0);
+    patrolled.put(grid.nodes[6][8], 0);
+    patrolled.put(grid.nodes[6][7], 0);
+    patrolled.put(grid.nodes[6][6], 0);
+    patrolled.put(grid.nodes[5][6], 0);
+    patrolled.put(grid.nodes[4][6], 0);
+    patrolled.put(grid.nodes[3][6], 0);
+  }
 }

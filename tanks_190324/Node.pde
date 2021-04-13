@@ -22,6 +22,8 @@ class Node {
   // Används vid skapande av grid
   Node(int _id_col, int _id_row, float _posx, float _posy) {
     this.position = new PVector(_posx, _posy);
+    this.x = _posx;
+    this.y = _posy;
     this.col = _id_col;
     this.row = _id_row;
     
@@ -54,4 +56,21 @@ class Node {
   Sprite content() {
     return this.content;
   }
+  
+  //TODO: implement better?
+  @Override
+  public boolean equals(Object o){
+    if (this == o)
+        return true;
+    if (o == null || !(o instanceof Node))
+        return false;
+    Node n = (Node) o;
+    return x == n.x && y == n.y && col == n.col && row == n.row;
+  }
+  
+    @Override
+  public String toString() {
+    return " (" + col +  ", "+ row  + ") ";//+" x: " + x + " y: " + y;
+  }
+  
 }

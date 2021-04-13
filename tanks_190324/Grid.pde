@@ -123,11 +123,11 @@ class Grid {
 
   //  return nearestNode;
   //}
-  
+
   //***************************************************  
   PVector getNearestNodePosition(PVector pvec) {
     Node n = getNearestNode(pvec);
-    
+
     return n.position;
   }
 
@@ -168,7 +168,7 @@ class Grid {
 
     return rn;
   }
-  
+
   //***************************************************
   // Används troligen tillsammans med getNearestNode().empty
   // om tom så addContent(Sprite)
@@ -176,5 +176,28 @@ class Grid {
     Node n = getNearestNode(s.position);
     n.addContent(s);
   }
-  
+
+  //***************************************************  
+
+  List<Node> getNodesNeighbours(Node n) {
+    List<Node> neighbours = new ArrayList<Node>();  
+
+    int currentCol = n.col;
+    int currentRow = n.row;
+
+    // used to move around the node n
+    int[] addToCol = {0, 1, 0, 0, -1, -1, 0, 0}; 
+    int[] addToRow = {-1, 0, 1, 1, 0, 0, -1, -1}; 
+
+    for (int i = 0; i < 8; i++) {
+      currentCol += addToCol[i];
+      currentRow += addToRow[i];
+
+      //check if we still are within the board
+      if (currentCol >= 0 && currentCol < cols && currentRow >= 0 && currentRow < rows) {
+        neighbours.add(nodes[currentCol][currentRow]);
+      }
+    }
+    return neighbours;
+  }
 }
