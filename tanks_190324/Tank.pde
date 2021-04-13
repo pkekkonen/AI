@@ -1206,6 +1206,7 @@ class Tank extends Sprite { //<>//
     view.add(grid.getNearestNode(viewLeft));
     view.add(grid.getNearestNode(viewRight));
     for (Node n : view) {
+      //println("get view" + n.x + n.y);
       assignCostValue(n);
     }
   }
@@ -1215,6 +1216,7 @@ class Tank extends Sprite { //<>//
     patrolling = true;
     getView();
     Node target = getNextTarget(currentNode);
+    println("start patrol x: "+target.x + " y: " + target.y);
     PVector vectorTarget = new PVector(target.x, target.y);
     moveTo(vectorTarget);
     while (patrolling) {
@@ -1223,7 +1225,6 @@ class Tank extends Sprite { //<>//
       }
       getView();
       target = getNextTarget(currentNode);
-      System.out.println(position);
       vectorTarget = new PVector(target.x, target.y);
       moveTo(vectorTarget);
     }
@@ -1257,32 +1258,56 @@ class Tank extends Sprite { //<>//
   }
 
   ArrayList<Node> getNeighboringNodes(Node current) {
-    final Node n = current;
-    ArrayList<Node> neighbors = new ArrayList<Node>() {
-      {
-        add(new Node(n.x-n.w, n.y-n.h));
-        add(new Node(n.x, n.y-n.h));
-        add(new Node(n.x+n.w, n.y-n.h));
-        add(new Node(n.x-n.w, n.y));
-        add(new Node(n.x+n.w, n.y));
-        add(new Node(n.x-n.w, n.y+n.h)); 
-        add(new Node(n.x, n.y+n.h)); 
-        add(new Node(n.x+n.w, n.y+n.h));
-      }
-    };
-    return neighbors;
+    ArrayList<Node> neighbors = new ArrayList<Node>();
+    
+    /*
+    neighbors.add(new Node(n.x-1, n.y-1));
+    neighbors.add(new Node(n.x, n.y-1));
+    neighbors.add(new Node(n.x+1, n.y-1));
+    neighbors.add(new Node(n.x-1, n.y));
+    neighbors.add(new Node(n.x+1, n.y));
+    neighbors.add(new Node(n.x-1, n.y+1)); 
+    neighbors.add(new Node(n.x, n.y+1)); 
+    Node c3 = new Node(1, 1);
+    //neighbors.add(new Node(n.x+1, n.y+1));
+    println("c3  x: " + c3.x + " y: " + c3.y);
+    for (Node temp : neighbors) {
+          println(temp.x + " " + temp.y);
+        }
+        */
+               
+     for (int i = -1; i < 2; i++) {
+      for (int j = -1; j < 2; j++) {
+        //println("getNN.   i :" + i + " j:" + j);
+        if ((current.col + i >= 0) && (current.row + j >= 0) && !(i == 0 && j == 0) //
+                      && (current.col + i <= 14) && (current.row + j <= 14)) { //
+            Node n = new Node(current.col +i, current.row + j, i*grid.grid_size+grid.grid_size, j*grid.grid_size+grid.grid_size);
+            if (!(patrolled.containsKey(n))) {
+              neighbors.add(n);
+            }
+        }
+       }
+     }
+     return neighbors;
   }
 
   Node getNextTarget(Node n) {
     Node target = null; 
-    for (Node temp : getNeighboringNodes(n)) {
+    ArrayList<Node> neighbors = getNeighboringNodes(n);
+    for (Node temp : neighbors) {
+      println("0.5. x: " + temp.col + " y: " + temp.row);
       if (!patrolled.containsKey(temp)) {
+        println("1. x: " + temp.x + " y: " + temp.y);
+        checkEnvironment();
         return temp;
       }
       if (target == null || patrolled.get(temp) < patrolled.get(target)) {
         target = temp;
+        println("2. x: " + temp.x + " y: " + temp.y);
       }
     }
+    println("This is me");
+    checkEnvironment();
     return target;
   }
 }

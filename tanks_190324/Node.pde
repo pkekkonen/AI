@@ -24,6 +24,8 @@ class Node {
     this.position = new PVector(_posx, _posy);
     this.col = _id_col;
     this.row = _id_row;
+    this.x = _posx;
+    this.y = _posy;
     
     this.content = null;
     this.isEmpty = true;
