@@ -1,4 +1,4 @@
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -869,13 +869,18 @@ class Tank extends Sprite {
 
         // Om tanken är redo för handling och kan agera.
         if (!this.isImmobilized && this.isReady) {  
+          
+          //TODO: ta bort if-sats! Används endast för att testa A*
           if (goingHome) {
             takePath();
           }
+          
+          //TODO: ta bort if-sats! Används endast för att testa A*
           if (!isAtHomebase && !goingHome) {
             System.out.println("GO HOME");
             findShortestPathHome();
           }
+          
           // Om tanken är i rörelse.
           if (this.isMoving) {
 
@@ -1214,28 +1219,31 @@ class Tank extends Sprite {
   // using A* f(n) = g(n) + h(n)
   void findShortestPathHome() {
     Queue<AStarNode> openQueue = new PriorityQueue<AStarNode>(new HeuristicsComparator());
-    LinkedList<Node> closedList = new LinkedList<Node>(); 
+    LinkedList<AStarNode> closedList = new LinkedList<AStarNode>(); 
+    openQueue.add(new AStarNode(this.startNode, calculateHeuristics(this.startNode), 0, null)); //adding start node
+
+    AStarNode current;
     
-    //TODO: TA BORT SEN. Använder endast för att printa ut the final path med f value
-    LinkedList<AStarNode> closedListTABORTSEN = new LinkedList<AStarNode>(); 
-
-
-    openQueue.add(new AStarNode(this.startNode, calculateHeuristics(this.startNode), 0));
-
     while (!openQueue.isEmpty()) {
-      System.out.println(openQueue);
-      AStarNode current = openQueue.poll();
-      closedList.add(current.node);
-      closedListTABORTSEN.add(current);
+      current = openQueue.poll();
+      closedList.add(current);
 
 
       if (isNodeInHomeBase(current.node)) {
-        System.out.println("DONE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        System.out.println(closedListTABORTSEN);
 
         //WE ARE DONE
+        LinkedList<Node> finalPath = new LinkedList<Node>();
+        AStarNode currNode = closedList.getLast();
+        while(currNode != null) {
+          finalPath.addFirst(currNode.node);
+          currNode = currNode.visitedThrough;
+                  System.out.println(finalPath);
+
+        }
+        System.out.println(finalPath);
+        pathHome = finalPath;
         goingHome = true;
-        pathHome = closedList;
+
         return;
       }
 
@@ -1257,10 +1265,12 @@ class Tank extends Sprite {
               openQueue.remove(nodeFromOpenQueue);
               nodeFromOpenQueue.fValue = fValue;
               nodeFromOpenQueue.gValue = gValue;
+              nodeFromOpenQueue.visitedThrough = current;
+
               openQueue.add(nodeFromOpenQueue);
             }
           } else {
-            openQueue.add(new AStarNode(n, fValue, gValue));
+            openQueue.add(new AStarNode(n, fValue, gValue, current));
           }
         }
       }
@@ -1325,11 +1335,13 @@ class Tank extends Sprite {
     Node node;
     double fValue;
     double gValue;
+    AStarNode visitedThrough;
 
-    AStarNode(Node node, double fValue, double gValue) {
+    AStarNode(Node node, double fValue, double gValue, AStarNode visitedThrough) {
       this.node = node;
       this.fValue = fValue;
       this.gValue = gValue;
+      this.visitedThrough = visitedThrough;
     }
     @Override
       public String toString() {
@@ -1345,8 +1357,8 @@ class Tank extends Sprite {
     }
   }
 
-
-  void testByAddingPatrolledNodes() {
+  //TODO: ta bort metod! Används endast för att testa A*
+  void testAStarAlgorithmByAddingPatrolledNodes() {
     //SHORTEST
     patrolled.put(grid.nodes[2][6], 0);
     patrolled.put(grid.nodes[2][7], 0);
