@@ -1,4 +1,4 @@
-class Tank extends Sprite { //<>// //<>// //<>// //<>//
+class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>//
   int id;
   //String name; //Sprite
   int team_id;
@@ -55,6 +55,7 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>//
   boolean stop_turning_state;
   boolean stop_turret_turning_state;
   boolean patrolling;
+  boolean okToGo;
 
   boolean idle_state; // Kan användas när tanken inte har nåt att göra.
 
@@ -122,6 +123,7 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>//
     this.stop_turning_state = true;
     this.stop_turret_turning_state = true;
     this.patrolling = false;
+    this.okToGo = true;
     
     // Under test
     this.isMoving = false;
@@ -821,6 +823,7 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>//
   void arrived() {
     println("*** Tank["+ this.getId() + "].arrived()");
     this.isMoving = false;  
+    okToGo = true;
     stopMoving_state();
   }
 
@@ -864,6 +867,10 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>//
 
             this.heading = this.velocity.heading();
             arrive();
+          }
+          
+          if (okToGo) {
+            startPatrulling();
           }
 
 
@@ -1199,7 +1206,7 @@ void startPatrolling(){
     lastVisited = startNode;
     patrolling = true;
 
-    while (patrolling) {
+    while (patrolling && okToGo) {
       ArrayList<Node> neighbours_temp = grid.getNodesNeighbours(startNode);
       ArrayList<Node> neighbours = removeVisited(neighbours_temp);
       for (Node n : neighbours) {
@@ -1211,15 +1218,17 @@ void startPatrolling(){
       if (neighbours.isEmpty()) {
         Node temp = new Node(lastVisited.col, lastVisited.row, lastVisited.x, lastVisited.y);
         println("temp  " +temp.x + " and " + temp.y);
-        rotateTo(temp.position);
+        okToGo = false;
+        //rotateTo(temp.position);
         moveTo(temp.position);
         startNode = temp;
       } else {
       Node target = grid.getRandomNodeWithin(neighbours);
       println("target  " +target.x + " and " + target.y);
-      rotateTo(target.position);
+      okToGo = false;
+      //rotateTo(target.position);
       moveTo(target.position);
-      if (startNode.position == target.position) {
+      if (this.position == target.position) {
             visited.add(target.position);
             target.setVisited(target, true);
       }
