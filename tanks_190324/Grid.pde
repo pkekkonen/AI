@@ -183,6 +183,7 @@ class Grid {
   void addContent(Sprite s) {
     Node n = getNearestNode(s.position);
     n.addContent(s);
+    n.isEmpty = false;
   }
   
     //***************************************************  

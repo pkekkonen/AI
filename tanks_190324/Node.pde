@@ -28,6 +28,7 @@ class Node {
     this.row = _id_row;
     this.x = _posx;
     this.y = _posy;
+    visited = false;
     
     this.content = null;
     this.isEmpty = true;
@@ -58,7 +59,8 @@ class Node {
   //***************************************************  
   void addContent(Sprite s) {
     if (this.isEmpty) {
-      this.content = s;  
+      this.content = s;
+      this.isEmpty = false;
     }
   }
 
