@@ -1200,7 +1200,14 @@ void startPatrolling(){
     patrolling = true;
 
     while (patrolling) {
-      ArrayList<Node> neighbours = getNearestNeighbours(startNode);
+      ArrayList<Node> neighbours_temp = grid.getNodesNeighbours(startNode);
+      ArrayList<Node> neighbours = removeVisited(neighbours_temp);
+      for (Node n : neighbours) {
+              println("startnode "+startNode.x + " "+ startNode.y+" neighbours:  " +n.x + " and " + n.y);
+      }
+      for (PVector n : visited) {
+              println("startnode "+startNode.x + " "+ startNode.y+" visited:  " +n.x + " and " + n.y);
+      }
       if (neighbours.isEmpty()) {
         Node temp = new Node(lastVisited.col, lastVisited.row, lastVisited.x, lastVisited.y);
         println("temp  " +temp.x + " and " + temp.y);
@@ -1212,13 +1219,29 @@ void startPatrolling(){
       println("target  " +target.x + " and " + target.y);
       rotateTo(target.position);
       moveTo(target.position);
-      visited.add(target.position);
-      lastVisited = target; //
+      if (startNode.position == target.position) {
+            visited.add(target.position);
+            target.setVisited(target, true);
+      }
+      lastVisited = target;
       startNode = target;
       }
     }
   }
   
+  ArrayList<Node> removeVisited(ArrayList<Node> list) {
+    ArrayList<Node> removed = new ArrayList<Node>();
+    
+    for (Node n : list) {
+      if (n.visited == false) {
+        removed.add(n);
+        println("removed: "+n.x + " and "+ n.y);
+      }
+    }
+    return removed;
+  }
+  
+  /*
 ArrayList<Node> getNearestNeighbours(Node node) {
     ArrayList<Node> neighbours = new ArrayList<Node>();
     println("current node "+node.col +" and "+ node.row);
@@ -1227,7 +1250,8 @@ ArrayList<Node> getNearestNeighbours(Node node) {
           for (int j = -1; j <= 1; j++) {
             if((node.col + i >= 0) && (node.row + j >= 0) && !(i == 0 && j == 0) // checks width, height, and not the same. borde vara mer generaliserad
                       && (node.col + i <= 14) && (node.row + j <= 14)) {
-              Node n = new Node(node.col + i, node.row + j, ((node.col + i)*grid.grid_size+grid.grid_size), ((node.row+j)*grid.grid_size+grid.grid_size)); 
+              //Node n = new Node(node.col + i, node.row + j, ((node.col + i)*grid.grid_size+grid.grid_size), ((node.row+j)*grid.grid_size+grid.grid_size)); 
+              Node n = grid.nodes[node.col + i][node.row + j]; 
                 if (!(visited.contains(n.position))) {
                   neighbours.add(n);
                   println("i:  " + i);
@@ -1239,5 +1263,5 @@ ArrayList<Node> getNearestNeighbours(Node node) {
         }
      }
     return neighbours;
-    }
+    }*/
 }

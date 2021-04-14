@@ -185,4 +185,27 @@ class Grid {
     n.addContent(s);
   }
   
+    //***************************************************  
+
+  ArrayList<Node> getNodesNeighbours(Node n) {
+    ArrayList<Node> neighbours = new ArrayList<Node>();  
+
+    int currentCol = n.col;
+    int currentRow = n.row;
+
+    // used to move around the node n
+    int[] addToCol = {0, 1, 0, 0, -1, -1, 0, 0}; 
+    int[] addToRow = {-1, 0, 1, 1, 0, 0, -1, -1}; 
+
+    for (int i = 0; i < 8; i++) {
+      currentCol += addToCol[i];
+      currentRow += addToRow[i];
+
+      //check if we still are within the board
+      if (currentCol >= 0 && currentCol < cols && currentRow >= 0 && currentRow < rows) {
+        neighbours.add(nodes[currentCol][currentRow]);
+      }
+    }
+    return neighbours;
+  }
 }
