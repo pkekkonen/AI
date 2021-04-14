@@ -7,9 +7,11 @@ class Node {
   
   PVector position;
   int col, row;
+  boolean visited;
   
   Sprite content;
   boolean isEmpty;
+  
   
   //***************************************************
   // Node Constructor 
@@ -24,6 +26,8 @@ class Node {
     this.position = new PVector(_posx, _posy);
     this.col = _id_col;
     this.row = _id_row;
+    this.x = _posx;
+    this.y = _posy;
     
     this.content = null;
     this.isEmpty = true;
@@ -36,7 +40,20 @@ class Node {
     w = tempW;
     h = tempH;
     angle = tempAngle;
+    visited = false;
   } 
+
+   //*************************************************** 
+   // Changing boolean visited
+  void setVisited(Node n, boolean b) {
+    n.visited = b;
+  }
+  
+   //*************************************************** 
+   // Accessing boolean visited
+  boolean getVisited(Node n) {
+    return n.visited;
+  }
 
   //***************************************************  
   void addContent(Sprite s) {

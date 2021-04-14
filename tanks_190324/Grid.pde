@@ -169,6 +169,14 @@ class Grid {
     return rn;
   }
   
+  //***************************************************  
+  Node getRandomNodeWithin(ArrayList<Node> neighbours) {
+    int randInt = int(random(neighbours.size()));
+    Node rn = neighbours.get(randInt);
+
+    return rn;
+  }
+  
   //***************************************************
   // Används troligen tillsammans med getNearestNode().empty
   // om tom så addContent(Sprite)
