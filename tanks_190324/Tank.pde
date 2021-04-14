@@ -1239,18 +1239,23 @@ class Tank extends Sprite { //<>// //<>// //<>//
         patrolling = false;
         System.out.println("AH! A TREE!");
         patrolled.put(target, Integer.MAX_VALUE);
-        target = lastVisitedNode;
-        vectorTarget = new PVector(target.x, target.y);
+        vectorTarget = new PVector(lastVisitedNode.x, lastVisitedNode.y);
         collidedWithTree = false;
         moveTo(vectorTarget);
-        assignCostValue(new ArrayList<Node>(), target);
+        assignCostValue(new ArrayList<Node>(), lastVisitedNode);
         startPatrol();
+        return;
       }
       if (grid.getNearestNode(position) != currentNode) {
         currentNode = grid.getNearestNode(position);
+        System.out.print("Neighbors: ");
+        for(Node n : getNeighboringNodes(currentNode)){
+          System.out.print(n.x + " " + n.y + " | ");
+        }
+        System.out.println();
         for(Node n : patrolled.keySet()){
           if(patrolled.get(n) < Integer.MAX_VALUE){
-            patrolled.put(n, -1);
+          patrolled.put(n, -1);
           }
         }
         assignCostValue(new ArrayList<Node>(), currentNode);
@@ -1263,10 +1268,6 @@ class Tank extends Sprite { //<>// //<>// //<>//
         target = getNextTarget(currentNode, lastVisitedNode);
         
         vectorTarget = new PVector(target.x, target.y);
-        System.out.print("Neighbors: ");
-        for(Node n : getNeighboringNodes(currentNode)){
-          System.out.print(" || " + n.x + " " + n.y);
-        }
         System.out.println();
         System.out.println("Current node: " + currentNode.x + " " + currentNode.y);
         System.out.println("Last visited: " + lastVisitedNode.x + " " + lastVisitedNode.y);
@@ -1279,7 +1280,6 @@ class Tank extends Sprite { //<>// //<>// //<>//
 
   void assignCostValue(ArrayList<Node> finished, Node n) {
     ArrayList<Node> neighbors = getNeighboringNodes(n);
-    System.out.println("No. of neighbors: " + neighbors.size());
     float r = this.diameter/2;
     for (Node temp : neighbors) {
       if(finished.contains(temp)){
@@ -1344,15 +1344,18 @@ class Tank extends Sprite { //<>// //<>// //<>//
   }
 
   Node getNextTarget(Node current, Node visited) {
-    Node target = null; 
+    Node target = null;
     ArrayList<Node> neighbors = getNeighboringNodes(current);
     for (Node temp : neighbors) {
+      if(temp == current || temp == visited){
+        continue;
+      }
       if (!patrolled.containsKey(temp)) {
        
         checkEnvironment();
         return temp;
       }
-      if ((target == null || patrolled.get(temp) < patrolled.get(target)) && temp != visited && temp != current) {
+      if ((target == null || patrolled.get(temp) < patrolled.get(target))) {
         target = temp;
         
       }
