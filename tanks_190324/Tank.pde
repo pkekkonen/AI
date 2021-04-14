@@ -56,6 +56,7 @@ class Tank extends Sprite { //<>// //<>// //<>//
   boolean patrolling;
 
   boolean idle_state; // Kan användas när tanken inte har nåt att göra.
+  boolean collidedWithTree;
 
   boolean isMoving; // Tanken är i rörelse.
   boolean isRotating; // Tanken håller på att rotera.
@@ -84,6 +85,7 @@ class Tank extends Sprite { //<>// //<>// //<>//
 
   // List of traversed areas
   private HashMap<Node, Integer> patrolled = new HashMap<Node, Integer>();
+  private Node lastVisitedNode;
 
 
   //**************************************************
@@ -1015,6 +1017,7 @@ class Tank extends Sprite { //<>// //<>// //<>//
         // Kontroll om att tanken inte "fastnat" i en annan tank. 
         distanceVect = PVector.sub(other.position, this.position);
         distanceVectMag = distanceVect.mag();
+        collidedWithTree = true;
         if (distanceVectMag < minDistance) {
           println("! Tank["+ this.getId() + "] – FAST I ETT TRÄD");
         }
@@ -1207,13 +1210,13 @@ class Tank extends Sprite { //<>// //<>// //<>//
 
   void getView() {
     PVector viewForward = position.add(new PVector((float)Math.cos(heading), (float)Math.sin(heading)).mult(this.diameter*2));
-  PVector viewLeft = position.add(new PVector((float)Math.cos(heading-90), (float)Math.sin(heading-90)).mult(this.diameter));
-  PVector viewRight = position.add(new PVector((float)Math.cos(heading+90), (float)Math.sin(heading+90)).mult(this.diameter));
+  //PVector viewLeft = position.add(new PVector((float)Math.cos(heading-90), (float)Math.sin(heading-90)).mult(this.diameter));
+  //PVector viewRight = position.add(new PVector((float)Math.cos(heading+90), (float)Math.sin(heading+90)).mult(this.diameter));
     ArrayList<Node> view = new ArrayList<Node>();
-    view.add(grid.getNearestNode(position));
+    //view.add(grid.getNearestNode(position));
     view.add(grid.getNearestNode(viewForward));
-    view.add(grid.getNearestNode(viewLeft));
-    view.add(grid.getNearestNode(viewRight));
+    //view.add(grid.getNearestNode(viewLeft));
+    //view.add(grid.getNearestNode(viewRight));
     for (Node n : view) {
       //println("get view" + n.x + n.y);
       assignCostValue(new ArrayList<Node>(), n);
@@ -1222,23 +1225,41 @@ class Tank extends Sprite { //<>// //<>// //<>//
 
 
   void startPatrol() {
-    Node lastVisitedNode = startNode;
-    assignCostValue(new ArrayList<Node>(), startNode);
+    if(lastVisitedNode == null){
+      lastVisitedNode = currentNode;
+    }
+    assignCostValue(new ArrayList<Node>(), currentNode);
     patrolling = true;
     //getView();
     Node target = getNextTarget(currentNode, lastVisitedNode);
     PVector vectorTarget = new PVector(target.x, target.y);
     moveTo(vectorTarget);
     while (patrolling) {
+      if(collidedWithTree){
+        patrolling = false;
+        System.out.println("AH! A TREE!");
+        patrolled.put(target, Integer.MAX_VALUE);
+        target = lastVisitedNode;
+        vectorTarget = new PVector(target.x, target.y);
+        collidedWithTree = false;
+        moveTo(vectorTarget);
+        assignCostValue(new ArrayList<Node>(), target);
+        startPatrol();
+      }
       if (grid.getNearestNode(position) != currentNode) {
         currentNode = grid.getNearestNode(position);
+        for(Node n : patrolled.keySet()){
+          if(patrolled.get(n) < Integer.MAX_VALUE){
+            patrolled.put(n, -1);
+          }
+        }
         assignCostValue(new ArrayList<Node>(), currentNode);
         System.out.print("Patrolled: ");
         for(Node n : patrolled.keySet()){
           System.out.print(" || " + n.x + " " + n.y + " (" + patrolled.get(n) + ")");
         }
         System.out.println();
-       // getView();
+        //getView();
         target = getNextTarget(currentNode, lastVisitedNode);
         
         vectorTarget = new PVector(target.x, target.y);
@@ -1257,7 +1278,6 @@ class Tank extends Sprite { //<>// //<>// //<>//
   }
 
   void assignCostValue(ArrayList<Node> finished, Node n) {
-    patrolled.put(n, -1);
     ArrayList<Node> neighbors = getNeighboringNodes(n);
     System.out.println("No. of neighbors: " + neighbors.size());
     float r = this.diameter/2;
@@ -1280,7 +1300,6 @@ class Tank extends Sprite { //<>// //<>// //<>//
     }
   } 
   void backPropagate(Node n, int i) {
-    System.out.println("Propagating");
     for (Node temp : getNeighboringNodes(n)) {
       if (patrolled.containsKey(temp) && (patrolled.get(temp) == -1 || (patrolled.get(temp) > i+1 && patrolled.get(temp) < Integer.MAX_VALUE))) {
         patrolled.put(temp, i+1); 
