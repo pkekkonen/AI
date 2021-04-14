@@ -1,4 +1,4 @@
-class Tank extends Sprite { //<>// //<>// //<>//
+class Tank extends Sprite { //<>//
   int id;
   //String name; //Sprite
   int team_id;
@@ -158,17 +158,8 @@ class Tank extends Sprite { //<>// //<>// //<>//
 
     this.ball.setColor(this.team.getColor());
     this.ball.setOwner(this);
-    
-    Node[][] nodes = grid.getAllNodes();
-    for(int i = 0; i < nodes.length; i++){
-      for(int j = 0; j < nodes[i].length; j++){
-        if(nodes[i][j].x > team.homebase_x && nodes[i][j].x < team.homebase_x+team.homebase_width && nodes[i][j].y > team.homebase_y && nodes[i][j].y < team.homebase_x+team.homebase_height){
-          patrolled.put(nodes[i][j], -1);
-        }
-      }
-    }
-    
-    
+
+
     initializeSensors();
   }
 
@@ -1216,73 +1207,56 @@ class Tank extends Sprite { //<>// //<>// //<>//
     view.add(grid.getNearestNode(viewRight));
     for (Node n : view) {
       //println("get view" + n.x + n.y);
-      assignCostValue(new ArrayList<Node>(), n);
+      assignCostValue(n);
     }
   }
 
 
   void startPatrol() {
     Node lastVisitedNode = startNode;
-    assignCostValue(new ArrayList<Node>(), startNode);
+    assignCostValue(startNode);
     patrolling = true;
-    //getView();
-    Node target = getNextTarget(currentNode, lastVisitedNode);
+    getView();
+    Node target = getNextTarget(currentNode);
+    println("start patrol x: "+target.x + " y: " + target.y);
     PVector vectorTarget = new PVector(target.x, target.y);
     moveTo(vectorTarget);
     while (patrolling) {
-      if (grid.getNearestNode(position) != currentNode) {
-        currentNode = grid.getNearestNode(position);
-        assignCostValue(new ArrayList<Node>(), currentNode);
-        System.out.print("Patrolled: ");
-        for(Node n : patrolled.keySet()){
-          System.out.print(" || " + n.x + " " + n.y + " (" + patrolled.get(n) + ")");
-        }
-        System.out.println();
-       // getView();
-        target = getNextTarget(currentNode, lastVisitedNode);
-        
-        vectorTarget = new PVector(target.x, target.y);
-        System.out.print("Neighbors: ");
-        for(Node n : getNeighboringNodes(currentNode)){
-          System.out.print(" || " + n.x + " " + n.y);
-        }
-        System.out.println();
-        System.out.println("Current node: " + currentNode.x + " " + currentNode.y);
-        System.out.println("Last visited: " + lastVisitedNode.x + " " + lastVisitedNode.y);
-        System.out.println("Target: " + target.x + " " + target.y);
+      if (position.dist(vectorTarget) < diameter) {
+        System.out.println("HI");
         lastVisitedNode = currentNode;
+        currentNode = grid.getNearestNode(position);
+        assignCostValue(currentNode);
+        getView();
+        target = getNextTarget(currentNode);
+        vectorTarget = new PVector(target.x, target.y);
+        System.out.println(target.x + " " + target.y);
         moveTo(vectorTarget);
       }
     }
   }
 
-  void assignCostValue(ArrayList<Node> finished, Node n) {
+  void assignCostValue(Node n) {
     patrolled.put(n, -1);
     ArrayList<Node> neighbors = getNeighboringNodes(n);
-    System.out.println("No. of neighbors: " + neighbors.size());
     float r = this.diameter/2;
     for (Node temp : neighbors) {
-      if(finished.contains(temp)){
-        continue;
-      }
       if (!patrolled.containsKey(temp)) {
-        if ((temp.position.y+r >= height) || (temp.position.y-r <= 0) ||
-          (temp.position.x+r >= width) || (temp.position.x-r <= 0)) {
+        //if ((temp.position.y+r >= height) || (temp.position.y-r <= 0) ||
+          //(temp.position.x+r >= width) || (temp.position.x-r <= 0)) {
           patrolled.put(temp, Integer.MAX_VALUE);
-        } else {
+        //} else {
           patrolled.put(n, 1);
           backPropagate(n, 1);
-        }
-      } else {
-        finished.add(temp);
-        assignCostValue(finished, temp);
+        //}
+      } else if (patrolled.get(temp) > -1) {
+        assignCostValue(temp);
       }
     }
   } 
   void backPropagate(Node n, int i) {
-    System.out.println("Propagating");
     for (Node temp : getNeighboringNodes(n)) {
-      if (patrolled.containsKey(temp) && (patrolled.get(temp) == -1 || (patrolled.get(temp) > i+1 && patrolled.get(temp) < Integer.MAX_VALUE))) {
+      if (patrolled.containsKey(temp) && patrolled.get(temp) > i+1 && patrolled.get(temp) < Integer.MAX_VALUE) {
         patrolled.put(temp, i+1); 
         backPropagate(temp, i+1);
       }
@@ -1313,8 +1287,7 @@ class Tank extends Sprite { //<>// //<>// //<>//
         //println("getNN.   i :" + i + " j:" + j);
         if ((current.col + i >= 0) && (current.row + j >= 0) && !(i == 0 && j == 0) //
                       && (current.col + i <= 14) && (current.row + j <= 14)) { //
-            Node n = new Node(current.col + i, current.row + j, ((current.col + i)*grid.grid_size+grid.grid_size), ((current.row+j)*grid.grid_size+grid.grid_size)); 
-           // Node n = new Node(current.col +i, current.row + j, i*grid.grid_size+grid.grid_size, j*grid.grid_size+grid.grid_size);
+            Node n = new Node(current.col +i, current.row + j, i*grid.grid_size+grid.grid_size, j*grid.grid_size+grid.grid_size);
             //if (!(patrolled.containsKey(n))) {
               neighbors.add(n);
             //}
@@ -1324,16 +1297,17 @@ class Tank extends Sprite { //<>// //<>// //<>//
      return neighbors;
   }
 
-  Node getNextTarget(Node current, Node visited) {
+  Node getNextTarget(Node n) {
     Node target = null; 
-    ArrayList<Node> neighbors = getNeighboringNodes(current);
+    ArrayList<Node> neighbors = getNeighboringNodes(n);
     for (Node temp : neighbors) {
+      
       if (!patrolled.containsKey(temp)) {
        
         checkEnvironment();
         return temp;
       }
-      if ((target == null || patrolled.get(temp) < patrolled.get(target)) && temp != visited && temp != current) {
+      if (target == null || patrolled.get(temp) < patrolled.get(target)) {
         target = temp;
         
       }
