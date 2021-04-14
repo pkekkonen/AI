@@ -144,7 +144,7 @@ void draw() {
   
   if (!gameOver && !pause) {
     // timer används inte i dagsläget.
-    timer.tick(); // Alt.1
+   // timer.tick(); // Alt.1
     float deltaTime = timer.getDeltaSec();
     remainingTime = int(timer.getTotalTime()); 
     if (remainingTime <= 0) {

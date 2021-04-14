@@ -10,6 +10,7 @@ class Node {
   
   Sprite content;
   boolean isEmpty;
+  int weight;
   
   //***************************************************
   // Node Constructor 
