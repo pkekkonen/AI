@@ -63,7 +63,7 @@ int remainingTime;
 
 void setup(){
   size(800, 800);
-  
+
   soundManager = new SoundManager(this);
   soundManager.addSound("tank_firing");
   soundManager.addSound("tank_idle");
@@ -130,6 +130,9 @@ void setup(){
   timer = new Timer();
   timer.setDirection("down");
   timer.setTime(startTime);
+  
+    //TODO: Ta bort! endast för testning av DFS
+  allTanks[0].patrolling = true;
 }
 
 

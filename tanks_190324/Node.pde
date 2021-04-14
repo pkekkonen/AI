@@ -45,14 +45,14 @@ class Node {
 
    //*************************************************** 
    // Changing boolean visited
-  void setVisited(Node n, boolean b) {
-    n.visited = b;
+  void setVisited(boolean b) {
+    visited = b;
   }
   
    //*************************************************** 
    // Accessing boolean visited
-  boolean getVisited(Node n) {
-    return n.visited;
+  boolean getVisited() {
+    return visited;
   }
 
   //***************************************************  
@@ -70,5 +70,20 @@ class Node {
   //***************************************************
   Sprite content() {
     return this.content;
+  }
+  
+  @Override
+  public boolean equals(Object o){
+    if (this == o)
+        return true;
+    if (o == null || !(o instanceof Node))
+        return false;
+    Node n = (Node) o;
+    return x == n.x && y == n.y && col == n.col && row == n.row;
+  }
+  
+  @Override
+  public String toString() {
+    return " (" + col +  ", "+ row  + ") ";//+" x: " + x + " y: " + y;
   }
 }

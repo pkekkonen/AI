@@ -1,4 +1,4 @@
-class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>//
+class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>//
   int id;
   //String name; //Sprite
   int team_id;
@@ -27,7 +27,7 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>//
 
   PVector startpos;
   PVector positionPrev; //spara temp senaste pos.
-  ArrayList<PVector> visited = new ArrayList<PVector>();
+  ArrayList<Node> visited = new ArrayList<Node>();
   Node lastVisited;
 
   Node startNode; // noden där tanken befinner sig.
@@ -55,7 +55,7 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>//
   boolean stop_turning_state;
   boolean stop_turret_turning_state;
   boolean patrolling;
-  boolean okToGo;
+  boolean isMovingOnPatroll;
 
   boolean idle_state; // Kan användas när tanken inte har nåt att göra.
 
@@ -101,7 +101,7 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>//
     this.positionPrev = new PVector(this.position.x, this.position.y); //spara temp senaste pos.
     this.targetPosition = new PVector(this.position.x, this.position.y); // Tanks har alltid ett target.
 
-    //this.startNode = grid.getNearestNodePosition(this.startpos);
+    this.startNode = grid.getNearestNode(this.startpos);
 
 
     if (this.team.getId() == 0) this.heading = radians(0); // "0" radians.
@@ -123,8 +123,8 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>//
     this.stop_turning_state = true;
     this.stop_turret_turning_state = true;
     this.patrolling = false;
-    this.okToGo = true;
-    
+    this.isMovingOnPatroll = false;
+
     // Under test
     this.isMoving = false;
     this.isRotating = false;
@@ -500,7 +500,6 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>//
     PVector steer = PVector.sub(desired, velocity);
     steer.limit(maxforce);  // Limit to maximum steering force
     applyForce(steer);
-
   }
 
   //**************************************************  
@@ -823,7 +822,7 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>//
   void arrived() {
     println("*** Tank["+ this.getId() + "].arrived()");
     this.isMoving = false;  
-    okToGo = true;
+    isMovingOnPatroll = false;
     stopMoving_state();
   }
 
@@ -868,9 +867,10 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>//
             this.heading = this.velocity.heading();
             arrive();
           }
-          
-          if (okToGo) {
-            allTanks[0].startPatrolling();
+
+          if (patrolling && !isMovingOnPatroll) {
+            System.out.println("ehjwehjehejhwhejjh");
+            keepPatrolling();
           }
 
 
@@ -1197,50 +1197,50 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>//
       }
     }
   }
-  
-  //*****************************************
-void startPatrolling(){
-    startNode = new Node(startpos.x, startpos.y);
-    startNode.setVisited(startNode, true);
-    visited.add(startpos);
-    lastVisited = startNode;
-    patrolling = true;
 
-    while (patrolling && okToGo) {
-      ArrayList<Node> neighbours_temp = grid.getNodesNeighbours(startNode);
-      ArrayList<Node> neighbours = removeVisited(neighbours_temp);
-      for (Node n : neighbours) {
-              println("startnode "+startNode.x + " "+ startNode.y+" neighbours:  " +n.x + " and " + n.y);
-      }
-      for (PVector n : visited) {
-              println("startnode "+startNode.x + " "+ startNode.y+" visited:  " +n.x + " and " + n.y);
-      }
-      if (neighbours.isEmpty()) {
-        Node temp = new Node(lastVisited.col, lastVisited.row, lastVisited.x, lastVisited.y);
-        println("temp  " +temp.x + " and " + temp.y);
-        okToGo = false;
-        //rotateTo(temp.position);
-        moveTo(temp.position);
-        startNode = temp;
-      } else {
+  //*****************************************
+  void keepPatrolling() {
+    isMovingOnPatroll = true;
+
+    if (!visited.contains(startNode)) {
+      startNode.setVisited(true);
+      visited.add(startNode);
+    }
+    lastVisited = startNode;
+
+    println("visited: "+visited);
+
+    ArrayList<Node> neighbours_temp = grid.getNodesNeighbours(startNode);
+    ArrayList<Node> neighbours = removeVisited(neighbours_temp);
+    //for (Node n : neighbours) {
+    //        println("startnode "+startNode.x + " "+ startNode.y+" neighbours:  " +n.x + " and " + n.y);
+    //}
+    //for (PVector n : visited) {
+    //        println("startnode "+startNode.x + " "+ startNode.y+" visited:  " +n.x + " and " + n.y);
+    //}
+    if (neighbours.isEmpty()) {
+      Node temp = new Node(lastVisited.col, lastVisited.row, lastVisited.x, lastVisited.y);
+      println("temp  " +temp.x + " and " + temp.y);
+      //rotateTo(temp.position);
+      moveTo(temp.position);
+      startNode = temp;
+    } else {
       Node target = grid.getRandomNodeWithin(neighbours);
       println("target  " +target.x + " and " + target.y);
-      okToGo = false;
       //rotateTo(target.position);
       moveTo(target.position);
-      if (this.position == target.position) {
-            visited.add(target.position);
-            target.setVisited(target, true);
+      if (this.position == target.position && !visited.contains(position)) {
+        visited.add(target);
+        target.setVisited(true);
       }
       lastVisited = target;
       startNode = target;
-      }
     }
   }
-  
+
   ArrayList<Node> removeVisited(ArrayList<Node> list) {
     ArrayList<Node> removed = new ArrayList<Node>();
-    
+
     for (Node n : list) {
       if (n.visited == false) {
         removed.add(n);
@@ -1249,28 +1249,28 @@ void startPatrolling(){
     }
     return removed;
   }
-  
+
   /*
 ArrayList<Node> getNearestNeighbours(Node node) {
-    ArrayList<Node> neighbours = new ArrayList<Node>();
-    println("current node "+node.col +" and "+ node.row);
-    println("current node "+node.x +" and "+ node.y);    
-    for (int i = -1; i < 1; i++) {
-          for (int j = -1; j <= 1; j++) {
-            if((node.col + i >= 0) && (node.row + j >= 0) && !(i == 0 && j == 0) // checks width, height, and not the same. borde vara mer generaliserad
-                      && (node.col + i <= 14) && (node.row + j <= 14)) {
-              //Node n = new Node(node.col + i, node.row + j, ((node.col + i)*grid.grid_size+grid.grid_size), ((node.row+j)*grid.grid_size+grid.grid_size)); 
-              Node n = grid.nodes[node.col + i][node.row + j]; 
-                if (!(visited.contains(n.position))) {
-                  neighbours.add(n);
-                  println("i:  " + i);
-                  println("j:  "+j);
-                  println("neighbours added "+n.col +" and "+ n.row);
-                  println("neighbours added "+n.x +" and "+ n.y);
-            }
-          }
-        }
-     }
-    return neighbours;
-    }*/
+   ArrayList<Node> neighbours = new ArrayList<Node>();
+   println("current node "+node.col +" and "+ node.row);
+   println("current node "+node.x +" and "+ node.y);    
+   for (int i = -1; i < 1; i++) {
+   for (int j = -1; j <= 1; j++) {
+   if((node.col + i >= 0) && (node.row + j >= 0) && !(i == 0 && j == 0) // checks width, height, and not the same. borde vara mer generaliserad
+   && (node.col + i <= 14) && (node.row + j <= 14)) {
+   //Node n = new Node(node.col + i, node.row + j, ((node.col + i)*grid.grid_size+grid.grid_size), ((node.row+j)*grid.grid_size+grid.grid_size)); 
+   Node n = grid.nodes[node.col + i][node.row + j]; 
+   if (!(visited.contains(n.position))) {
+   neighbours.add(n);
+   println("i:  " + i);
+   println("j:  "+j);
+   println("neighbours added "+n.col +" and "+ n.row);
+   println("neighbours added "+n.x +" and "+ n.y);
+   }
+   }
+   }
+   }
+   return neighbours;
+   }*/
 }
