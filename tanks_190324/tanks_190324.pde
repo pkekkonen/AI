@@ -130,11 +130,6 @@ void setup(){
   timer = new Timer();
   timer.setDirection("down");
   timer.setTime(startTime);
-    new Thread(){
-    public void run() {
-       allTanks[0].startPatrolling();
-    }
-}.start();
 }
 
 

@@ -870,7 +870,7 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>//
           }
           
           if (okToGo) {
-            startPatrulling();
+            allTanks[0].startPatrolling();
           }
 
 
