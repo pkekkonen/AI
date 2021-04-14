@@ -1287,7 +1287,8 @@ class Tank extends Sprite { //<>// //<>//
         //println("getNN.   i :" + i + " j:" + j);
         if ((current.col + i >= 0) && (current.row + j >= 0) && !(i == 0 && j == 0) //
                       && (current.col + i <= 14) && (current.row + j <= 14)) { //
-            Node n = new Node(current.col +i, current.row + j, i*grid.grid_size+grid.grid_size, j*grid.grid_size+grid.grid_size);
+            Node n = new Node(current.col + i, current.row + j, ((current.col + i)*grid.grid_size+grid.grid_size), ((current.row+j)*grid.grid_size+grid.grid_size)); 
+           // Node n = new Node(current.col +i, current.row + j, i*grid.grid_size+grid.grid_size, j*grid.grid_size+grid.grid_size);
             //if (!(patrolled.containsKey(n))) {
               neighbors.add(n);
             //}
