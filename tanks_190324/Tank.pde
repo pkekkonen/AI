@@ -1,4 +1,4 @@
-class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
   int id;
   //String name; //Sprite
   int team_id;
@@ -27,11 +27,11 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<
 
   PVector startpos;
   PVector positionPrev; //spara temp senaste pos.
-  ArrayList<Node> visited = new ArrayList<Node>();
-  Node lastVisited;
-  boolean turningBack;
-  ArrayList<Node> badSpace = new ArrayList<Node>();
-  int counter; //how much will  you back
+  ArrayList<Node> visited = new ArrayList<Node>(); // lista över de noder som traverserats, inkl backtracking
+  Node lastVisited; // den senaste noden som tanksen var på
+  boolean turningBack; // Behöver tanksen backa pga collision eller att det är dags att backtracka? This is the boolean for you
+  ArrayList<Node> badSpace = new ArrayList<Node>(); // har en nod fått din tanks att backa? Mark it with this
+  int counter; //Hur pass mycket noden behöver backa
 
   Node startNode; // noden där tanken befinner sig.
 
@@ -57,8 +57,8 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<
   boolean stop_state;
   boolean stop_turning_state;
   boolean stop_turret_turning_state;
-  boolean patrolling;
-  boolean isMovingOnPatroll;
+  boolean patrolling; //starts the patrolling, called in tanks_190304
+  boolean isMovingOnPatroll; //Tanksen är ute och patrullerar
 
   boolean idle_state; // Kan användas när tanken inte har nåt att göra.
 
@@ -105,10 +105,10 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<
     this.targetPosition = new PVector(this.position.x, this.position.y); // Tanks har alltid ett target.
 
     this.startNode = grid.getNearestNode(this.startpos);
-    visited.add(startNode);
-    startNode.setVisited(true);
-    this.lastVisited = grid.getNearestNode(this.startpos);
-    this.counter = 1;
+    visited.add(startNode); //Lägger till startpositionen till listan av noder som traversats
+    startNode.setVisited(true); // sätter startnodens variable visited till true
+    this.lastVisited = grid.getNearestNode(this.startpos); //Lägger till startpositionen som senast traverserade nod
+    this.counter = 1; //sätter counter till ett, då listan börjar med att backa ett steg. 
 
     if (this.team.getId() == 0) this.heading = radians(0); // "0" radians.
     if (this.team.getId() == 1) this.heading = radians(180); // "3.14" radians.
@@ -128,8 +128,8 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<
     this.stop_state = true;
     this.stop_turning_state = true;
     this.stop_turret_turning_state = true;
-    this.patrolling = false;
-    this.isMovingOnPatroll = false;
+    this.patrolling = false; //Patrolling startar från tanks_190304
+    this.isMovingOnPatroll = false; // Patrolling startar från tanks_190304
 
     // Under test
     this.isMoving = false;
@@ -145,7 +145,7 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<
     this.rotation_speed = 0;
     this.image_scale = 0.5;
     this.isColliding = false;
-    this.turningBack = false;
+    this.turningBack = false; //Man startar generellt inte med att backa
 
 
     //this.img = loadImage("tankBody2.png");
@@ -802,6 +802,9 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<
     steer.limit(maxforce);  // Limit to maximum steering force
     applyForce(steer);
 
+
+// Ändrat så baserat på huruvida tanksen ska backa ett eller flera steg eller inga alls
+// väljs olika arrivedfunktioner
     if (d < 1) {
       if(turningBack && !isColliding) {
         arrivedBack();
@@ -835,47 +838,44 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<
   //**************************************************
   void arrived() {
     println("*** Tank["+ this.getId() + "].arrived()");
-    startNode = grid.getNearestNode(this.position);
-    lastVisited = startNode;
-    //if (!visited.contains(startNode)) {
-      visited.add(startNode);
-      startNode.setVisited(true);
-    //}
-    counter = 1;
-    this.isMoving = false;  
+    startNode = grid.getNearestNode(this.position);  // Startnode är nu den nuvarande positionen
+    lastVisited = startNode; //LastVisited är nu också den nuvarande positionen. 
+    visited.add(startNode); // Lägger till nuvarande positionen över lista över besökta platser
+    startNode.setVisited(true); // Ändrar variabel av nuvarande noden till visited. 
+    counter = 1; // ifall counter har ändrats sätts den åter till ett, 
+    //dens syfte är att kontrollera hur långt bak tanksen ska backa och det ställs till utgångsvärdet då tanksen inte behöver backa, utan kan gå normalt
+    this.isMoving = false;
     isMovingOnPatroll = false;
     stopMoving_state();
   }
   
   //**************************************************
+  // arrivedBack() gör saker lite annorlunda än arrived()
+  //Den startar backtrackandet om tanksen finner sig i en situation där alla neighbouring noder redan är undersökta.
   void arrivedBack() {
     println("*** Tank["+ this.getId() + "].arrivedBack()");
     println("visited before back"+visited + " and lastVisisted " + lastVisited.col + " " + lastVisited.row);
-    lastVisited = visited.get(visited.size()-counter);
-    println();
+    lastVisited = visited.get(visited.size()-counter); //Sätter lastVisited till senaste noden innan den fastnade
     println("visited before back"+visited + " and lastVisisted " + lastVisited.col + " " + lastVisited.row);
-    startNode = grid.getNearestNode(this.position);
-    visited.add(startNode);
-    //if (!visited.contains(startNode)) {
-    //}
-    counter = counter + 2;
-    turningBack = false;
+    startNode = grid.getNearestNode(this.position); //startNoden sätts i nuvarande position
+    visited.add(startNode); // nuvarande position läggs till undersökt
+    counter = counter + 2; // counter lägger till två för att komma förbi den nod som just lagts till och den tanksen just backat till. 
+    turningBack = false; //klar med att backa
     this.isMoving = false;  
     isMovingOnPatroll = false;
     stopMoving_state();
   }
   
     //**************************************************
+    // Denna funktion startas upp om tanksen kolliderat och nu ska tillbaka till sin tidigare plats (den nod den var på innan kollisionen)
   void arrivedBackFromCollision() {
     println("*** Tank["+ this.getId() + "].arrivedBackFromColliding()");
     println("visited before back"+visited + " and lastVisisted " + lastVisited.col + " " + lastVisited.row);
-    lastVisited = visited.get(visited.size()-1);
+    lastVisited = visited.get(visited.size()-1); // lastVisited sätts till senaste värdet i visited, dvs där den var innan den krockade
     println();
     println("visited before back"+visited + " and lastVisisted " + lastVisited.col + " " + lastVisited.row);
-    startNode = grid.getNearestNode(this.position);
-    visited.add(startNode);
-    //if (!visited.contains(startNode)) {
-    //}
+    startNode = grid.getNearestNode(this.position); //Startnod sätts till nuvarande position
+    visited.add(startNode); // Startnode läggs på nytt till i visited. 
     turningBack = false;
     isColliding = false;
     this.isMoving = false;  
@@ -925,6 +925,7 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<
             arrive();
           }
 
+        //Tillagt så den fortsätter patrullera om den startats och även efter att den krockat
           if ((patrolling && !isMovingOnPatroll) || isColliding) {
             keepPatrolling();
           }
@@ -1069,8 +1070,8 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<
         if (distanceVectMag < minDistance) {
           println("! Tank["+ this.getId() + "] – FAST I ETT TRÄD");
         }
-        isColliding = true;
-        badSpace.add(grid.getNearestNode(targetPosition));
+        isColliding = true; //lagt till att tanksen krockar
+        badSpace.add(grid.getNearestNode(targetPosition)); // lagt till noden tanksen krockat med. 
         stopMoving_state();
       }
 
@@ -1116,8 +1117,8 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<
           println("! Tank["+ this.getId() + "] – FAST I EN ANNAN TANK");
         }
 
-        isColliding = true;
-        badSpace.add(grid.getNearestNode(targetPosition));
+        isColliding = true; //Lagt till att tanksen håller på att krocka
+        badSpace.add(grid.getNearestNode(targetPosition)); //lägger till noden i listan över platser tanksen krockat på
         this.isMoving = false;  
         stopMoving_state();
       }
@@ -1258,78 +1259,42 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<
   }
 
   //*****************************************
+  // keepPatrolling() är den funktion som bestämmer vilken node tanksen ska till härnäst
   void keepPatrolling() {
     isMovingOnPatroll = true;
-    /*
-    if (!visited.contains(startNode)) {
-     startNode.setVisited(true);
-     visited.add(startNode);
-     println("startnode " + startNode.position);
-     }*/
-    //lastVisited = startNode;
 
     println("visited: "+visited);
 
-    ArrayList<Node> neighbours_temp = grid.getNodesNeighbours(startNode);
-    ArrayList<Node> neighbours = removeVisited(neighbours_temp);
-    if (neighbours.isEmpty()) {
-      Node temp = new Node(lastVisited.col, lastVisited.row, lastVisited.x, lastVisited.y);
-      println("temp  " +temp.col + " and " + temp.row);
-      turningBack = true;
-      moveTo(temp.position);
-      println("last visited  " +lastVisited.col + " and " + lastVisited.row);
-    } else if (isColliding) {
+    ArrayList<Node> neighbours_temp = grid.getNodesNeighbours(startNode); //de åtta närliggande noderna
+    ArrayList<Node> neighbours = removeVisited(neighbours_temp); // de som är kvar efter noderna som a) redan är besökta och b) är inskrivna som krock-noder
+    if (neighbours.isEmpty() || isColliding) { // om listan är tom eller tanksen just krockat ska tanksen backtracka till den senaste noden den var vid. 
       Node back = new Node(lastVisited.col, lastVisited.row, lastVisited.x, lastVisited.y);
       println("back  " +back.col + " and " + back.row);
       turningBack = true;
       moveTo(back.position);
       println("last visited  " +lastVisited.col + " and " + lastVisited.row);
-      
-    } else {
+    } else { // om grannlistan inte är tom, ska en random väljas ut och åkas till. 
       Node target = grid.getRandomNodeWithin(neighbours);
       println("target  " +target.col + " and " + target.row);
       moveTo(target.position);
-      //println(grid.getNearestNode(this.position).x + " " + grid.getNearestNode(this.position).y);
-      //println(target.x + "  " + target.y);
-      //if (grid.getNearestNode(this.position).position == target.position) {
       println("last visited  " +lastVisited.col + " and " + lastVisited.row);
       //}
     }
   }
 
+
+//*****************************************************
+// removeVisited tar in listan med ens nods närmsta noder och sorterar bort de som 
+// redan är besökta och redan är krockade med. 
   ArrayList<Node> removeVisited(ArrayList<Node> list) {
     ArrayList<Node> removed = new ArrayList<Node>();
 
     for (Node n : list) {
-      if (n.getVisited() == false && n.empty() && !(badSpace.contains(n))) {
+      if (n.getVisited() == false && !(badSpace.contains(n))) {
         removed.add(n);
         println("removed: " + n.col + "  " + n.row);
       }
     }
     return removed;
   }
-
-  /*
-ArrayList<Node> getNearestNeighbours(Node node) {
-   ArrayList<Node> neighbours = new ArrayList<Node>();
-   println("current node "+node.col +" and "+ node.row);
-   println("current node "+node.x +" and "+ node.y);    
-   for (int i = -1; i < 1; i++) {
-   for (int j = -1; j <= 1; j++) {
-   if((node.col + i >= 0) && (node.row + j >= 0) && !(i == 0 && j == 0) // checks width, height, and not the same. borde vara mer generaliserad
-   && (node.col + i <= 14) && (node.row + j <= 14)) {
-   //Node n = new Node(node.col + i, node.row + j, ((node.col + i)*grid.grid_size+grid.grid_size), ((node.row+j)*grid.grid_size+grid.grid_size)); 
-   Node n = grid.nodes[node.col + i][node.row + j]; 
-   if (!(visited.contains(n.position))) {
-   neighbours.add(n);
-   println("i:  " + i);
-   println("j:  "+j);
-   println("neighbours added "+n.col +" and "+ n.row);
-   println("neighbours added "+n.x +" and "+ n.y);
-   }
-   }
-   }
-   }
-   return neighbours;
-   }*/
 }

@@ -7,7 +7,7 @@ class Node {
   
   PVector position;
   int col, row;
-  boolean visited;
+  boolean visited; //Boolean ifall noden är undersökt eller ej
   
   Sprite content;
   boolean isEmpty;
@@ -26,9 +26,9 @@ class Node {
     this.position = new PVector(_posx, _posy);
     this.col = _id_col;
     this.row = _id_row;
-    this.x = _posx;
+    this.x = _posx; //lägger till x och y till sina värden
     this.y = _posy;
-    visited = false;
+    visited = false; // sätter att vid skapandet är noden inte undersökt. 
     
     this.content = null;
     this.isEmpty = true;

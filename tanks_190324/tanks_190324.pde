@@ -148,7 +148,7 @@ void draw() {
     if (remainingTime <= 0) {
       remainingTime = 0;
       timer.pause();
-      //gameOver = true;  
+      //gameOver = true;  //Aldrig game overs
     }
     
     int passedTime = millis() - savedTime; // Alt.2

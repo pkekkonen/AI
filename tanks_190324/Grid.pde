@@ -169,7 +169,8 @@ class Grid {
     return rn;
   }
   
-  //***************************************************  
+  //*************************************************** 
+  // Väljer ett random värde från en lista av noder
   Node getRandomNodeWithin(ArrayList<Node> neighbours) {
     int randInt = int(random(neighbours.size()));
     Node rn = neighbours.get(randInt);
@@ -186,8 +187,8 @@ class Grid {
     n.isEmpty = false;
   }
   
-    //***************************************************  
-
+  //***************************************************  
+  //Ger åter en lista av de åtta närmsta noderna runt en nod (om inte vid en vägg)
   ArrayList<Node> getNodesNeighbours(Node n) {
     ArrayList<Node> neighbours = new ArrayList<Node>();  
 
