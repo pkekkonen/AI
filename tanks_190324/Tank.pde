@@ -1237,36 +1237,7 @@ class Tank extends Sprite { //<>//
 
 
   void goHome() {
-    System.out.println("OH FUCK! A TANK!");
-    for (Node n : patrolled.keySet()) {
-      if (homeNodes.contains(n)) {
-        patrolled.put(n, 1);
-      } else {
-        patrolled.put(n, -1);
-      }
-    }
-    backPropagate(homeNodes.get(0), 1);
-    target = getNextTarget(currentNode, currentNode);
-    PVector vectorTarget = new PVector(target.x, target.y);
-    moveTo(vectorTarget);
-    while (goingHome) {
-      if (grid.getNearestNode(position) != currentNode) {
-        lastVisitedNode = currentNode;
-        currentNode = grid.getNearestNode(position);
-        target = getNextTarget(currentNode, lastVisitedNode);
-        vectorTarget = new PVector(target.x, target.y);
-        moveTo(vectorTarget);
-      }
-
-      if (isAtHomebase) {
-        goingHome = false;
-        for (int i = 0; i < 3000; i++) {
-          continue;
-        }
-      }
-    }
-    patrolling = true;
-    startPatrol();
+   System.out.println("I should go.");
   }
 
 
@@ -1321,8 +1292,6 @@ class Tank extends Sprite { //<>//
         moveTo(vectorTarget);
       }
     }
-    System.out.println("Going home");
-    showGrid();
     goHome();
   }
 
@@ -1355,18 +1324,6 @@ class Tank extends Sprite { //<>//
       if (patrolled.containsKey(temp) && (patrolled.get(temp) == -1 || (patrolled.get(temp) > i+1 && patrolled.get(temp) != Integer.MAX_VALUE))) {
         patrolled.put(temp, i+1); 
         backPropagate(temp, i+1);
-      }
-    }
-  }
-
-
-  void homePropagate(Node n) {
-    int lowestValue;
-    for (Node temp : getNeighboringNodes(n)) {
-      if (homeNodes.contains(temp) {
-        patrolled.put(temp, 1);
-      } else {
-        lowestValue = lowestValue < patrolled.get(temp)+1 ? lowestValue : patrolled.get(temp)+1;
       }
     }
   }
@@ -1437,7 +1394,6 @@ class Tank extends Sprite { //<>//
     float minDistance = this.radius + other.radius; 
     if (distanceVectMag <= minDistance) {
       tankAhead = true; 
-      showGrid();
     }
   }
 }
