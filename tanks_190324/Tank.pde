@@ -1,6 +1,4 @@
-class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
-
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -1537,6 +1535,7 @@ class Tank extends Sprite {
   }
 
   //TODO: ta bort metod! Används endast för att testa A*
+  /*
   void testAStarAlgorithmByAddingPatrolledNodes() {
     //SHORTEST
     //patrolled.put(grid.nodes[2][6], 0);
@@ -1577,8 +1576,8 @@ class Tank extends Sprite {
     patrolled.put(grid.nodes[0][6], 0);
     patrolled.put(grid.nodes[0][5], 0);
     patrolled.put(grid.nodes[0][4], 0);
-}
-}
+    }*/
+   }
 
 
   private enum Direction {

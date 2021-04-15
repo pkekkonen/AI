@@ -189,8 +189,8 @@ class Grid {
 
   //***************************************************  
   //Ger åter en lista av de åtta närmsta noderna runt en nod (om inte vid en vägg)
-  List<Node> getNodesNeighbours(Node n) {
-    List<Node> neighbours = new ArrayList<Node>();  
+  ArrayList<Node> getNodesNeighbours(Node n) {
+    ArrayList<Node> neighbours = new ArrayList<Node>();  
 
     int currentCol = n.col;
     int currentRow = n.row;
