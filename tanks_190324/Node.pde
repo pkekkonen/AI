@@ -23,6 +23,8 @@ class Node {
   // Används vid skapande av grid
   Node(int _id_col, int _id_row, float _posx, float _posy) {
     this.position = new PVector(_posx, _posy);
+    this.x = _posx;
+    this.y = _posy;
     this.col = _id_col;
     this.row = _id_row;
     this.x = _posx;
@@ -84,4 +86,10 @@ class Node {
     {
         return ((int)x * (int)y / 13 * (int)angle * 7 * 149);
     }
+  
+    @Override
+    public String toString() {
+        return " (" + col +  ", "+ row  + ") ";//+" x: " + x + " y: " + y;
+    }
+  
 }

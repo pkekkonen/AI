@@ -1,6 +1,11 @@
-import java.util.Collections; //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.Collections;
 
-class Tank extends Sprite { //<>//
+class Tank extends Sprite {
   int id;
   //String name; //Sprite
   int team_id;
@@ -57,7 +62,6 @@ class Tank extends Sprite { //<>//
   boolean stop_turret_turning_state;
   boolean patrolling;
   boolean tankAhead;
-  boolean goingHome;
 
   boolean idle_state; // Kan användas när tanken inte har nåt att göra.
   boolean collidedWithTree;
@@ -68,6 +72,8 @@ class Tank extends Sprite { //<>//
   boolean isColliding; // Tanken håller på att krocka.
   boolean isAtHomebase;
   boolean userControlled; // Om användaren har tagit över kontrollen.
+  boolean goingHome;
+  boolean okayToGoNextStepHome;
 
   boolean hasShot; // Tanken kan bara skjuta om den har laddat kanonen, hasShot=true.
   CannonBall ball;
@@ -95,6 +101,9 @@ class Tank extends Sprite { //<>//
   private Node lastVisitedNode;
 
 
+
+  //Shortest path home 
+  private LinkedList<Node> pathHome = new LinkedList<Node>();
   //**************************************************
   Tank(int id, Team team, PVector _startpos, float diameter, CannonBall ball) {
     println("*** NEW TANK(): [" + team.getId()+":"+id+"]");
@@ -139,6 +148,8 @@ class Tank extends Sprite { //<>//
     this.isRotating = false;
     this.isAtHomebase = true;
     this.idle_state = true;
+    this.goingHome = false;
+    this.okayToGoNextStepHome = true;
 
     this.ball = ball;
     this.hasShot = false;
@@ -845,6 +856,9 @@ class Tank extends Sprite { //<>//
   void arrived() {
     println("*** Tank["+ this.getId() + "].arrived()");
     this.isMoving = false;  
+    okayToGoNextStepHome = true;
+    if(isAtHomebase)
+        goingHome = false;
     stopMoving_state();
   }
 
@@ -883,7 +897,12 @@ class Tank extends Sprite { //<>//
 
         // Om tanken är redo för handling och kan agera.
         if (!this.isImmobilized && this.isReady) {  
-
+          
+          //TODO: ta bort if-sats! Används endast för att testa A*
+          if (goingHome) {
+            takePath();
+          }
+          
           // Om tanken är i rörelse.
           if (this.isMoving) {
 
@@ -1237,6 +1256,8 @@ class Tank extends Sprite { //<>//
 
 
   void goHome() {
+    goingHome = true;
+    findShortestPathHome();
    System.out.println("I should go.");
   }
 
@@ -1396,4 +1417,264 @@ class Tank extends Sprite { //<>//
       tankAhead = true; 
     }
   }
+
+  //*****************************
+
+  //TODO: make better implementation
+  Direction lastDir;
+
+  // using A* f(n) = g(n) + h(n)
+  void findShortestPathHome() {
+    Queue<AStarNode> openQueue = new PriorityQueue<AStarNode>(new HeuristicsComparator());
+    LinkedList<AStarNode> closedList = new LinkedList<AStarNode>(); 
+    openQueue.add(new AStarNode(this.startNode, calculateHeuristics(this.startNode), 0, null)); //adding start node
+
+    AStarNode current;
+    
+    while (!openQueue.isEmpty()) {
+      current = openQueue.poll();
+      closedList.add(current);
+
+
+      if (isNodeInHomeBase(current.node)) {
+
+        //WE ARE DONE
+        LinkedList<Node> finalPath = new LinkedList<Node>();
+        LinkedList<Node> actualFinalPath = new LinkedList<Node>();
+        AStarNode currNode = closedList.getLast();
+        lastDir = getDirection(currNode.node, currNode.visitedThrough.node);
+
+        Direction dir = null;
+        Direction prevDir = null;
+        
+        while(currNode != null) {
+          prevDir = dir;
+          if(currNode.visitedThrough != null) {
+            dir = getDirection(currNode.node, currNode.visitedThrough.node);
+          }
+          if(dir == null ||  dir != prevDir) { 
+            finalPath.addFirst(currNode.node);             
+          }
+          actualFinalPath.addFirst(currNode.node);             
+
+          currNode = currNode.visitedThrough;
+
+        }
+        System.out.println(actualFinalPath);
+        System.out.println(finalPath);
+        pathHome = finalPath;
+        goingHome = true;
+
+        return;
+      }
+
+      // få närliggande som vi känner till från current 
+      // ska ligga i patrolled
+      List<Node> children = grid.getNodesNeighbours(current.node);
+
+      for (Node n : children) {
+        if (patrolled.containsKey(n)) {
+          double gValue = calculateGValue(current, n);
+          double hValue = calculateHeuristics(n);
+          double fValue = gValue+hValue;
+
+          //Does openQueue contain the current node? If it does and the heuristic for that in the queue is lower, do nothing. Else, add this node heuristic instead
+          AStarNode nodeFromOpenQueue = findAStarNode(n, openQueue);
+          if (!closedList.contains(n) && nodeFromOpenQueue != null ) {
+            if (nodeFromOpenQueue.gValue >= gValue) {
+              //Updating value, must remove and reinsert element so the priority is updated
+              openQueue.remove(nodeFromOpenQueue);
+              nodeFromOpenQueue.fValue = fValue;
+              nodeFromOpenQueue.gValue = gValue;
+              nodeFromOpenQueue.visitedThrough = current;
+
+              openQueue.add(nodeFromOpenQueue);
+            }
+          } else {
+            openQueue.add(new AStarNode(n, fValue, gValue, current));
+          }
+        }
+      }
+    }
+  }
+  
+  Direction getDirection(Node a, Node b) {
+    if(a.x == b.x && a.y > b.y) {
+      return Direction.NORTH;
+    } else if(a.x < b.x && a.y > b.y) {
+      return Direction.NORTHEAST;
+    } else if(a.x < b.x && a.y == b.y) {
+      return Direction.EAST;
+    } else if(a.x < b.x && a.y < b.y) {
+      return Direction.SOUTHEAST;
+    } else if(a.x == b.x && a.y < b.y) {
+      return Direction.SOUTH;
+    } else if(a.x > b.x && a.y < b.y) {
+      return Direction.SOUTHWEST;
+    } else if(a.x > b.x && a.y == b.y) {
+      return Direction.WEST;
+    } else {
+      return Direction.NORTHWEST;
+    }
+  
+  }
+
+  // Returns the AStarNode in queue containing the Node node.
+  // Returns null if no such AStarNode exists.
+  AStarNode findAStarNode(Node node, Queue<AStarNode> queue) {
+    for (AStarNode n : queue) {
+      if (n.node.equals(node))
+        return n;
+    }
+    return null;
+  }
+
+  // 
+  void takePath() {
+    //if (pathHome.isEmpty() && okayToGoNextStepHome) {
+    //  moveTo(startNode.x-1, startNode.y-1);
+    //  goingHome = false;
+    //} else 
+    if (okayToGoNextStepHome) {
+      Node next = pathHome.poll();
+      okayToGoNextStepHome = false;
+
+      if (pathHome.isEmpty()) {
+        //TODO: make better implementation
+        int x = 0, y = 0;
+        if(lastDir == Direction.NORTH || lastDir == Direction.NORTHWEST || lastDir == Direction.NORTHEAST) {
+          y = 1;
+        } else if(lastDir == Direction.SOUTH || lastDir == Direction.SOUTHWEST || lastDir == Direction.SOUTHEAST) {
+          y = -1;
+        } 
+        
+        if(lastDir == Direction.EAST || lastDir == Direction.NORTHEAST || lastDir == Direction.SOUTHEAST) {
+          x = -1;
+        } else if(lastDir == Direction.WEST || lastDir == Direction.SOUTHWEST || lastDir == Direction.NORTHWEST) {
+          x = 1;
+        } 
+        
+        moveTo(next.x+1, next.y+y);
+        goingHome = false;
+      } else {
+          moveTo(next.x, next.y);
+      }
+      
+    }
+  }  
+
+  // Check if node is within homebase
+  boolean isNodeInHomeBase(Node current) {
+    if (
+      current.x > team.homebase_x && 
+      current.x <= team.homebase_x+team.homebase_width &&
+      current.y > team.homebase_y &&
+      current.y <= team.homebase_y+team.homebase_height) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  // real distance from start to current
+  double calculateGValue(AStarNode a, Node b) {
+    double prevDist = a.gValue;
+    double newDist = Math.sqrt(Math.pow(a.node.x-b.x, 2)+Math.pow(a.node.y-b.y, 2));
+    return prevDist + newDist;
+  }
+
+  double calculateHeuristics(Node n) {
+    
+    //If we think of the game plan as a coordinate system where the point (team.homebase_x+team.homebase_width, team.homebase_y+team.homebase_height) is origo,
+    //then the following if-statements determines whether the Node n is in the first, third or fourth quadrant and calculates accordingly
+    if(n.x <= team.homebase_x+team.homebase_width) { // n is in the third quadrant
+      return n.y-(team.homebase_y+team.homebase_height);
+    } else if(n.y <= team.homebase_y+team.homebase_height) { // n is in the first quadrant
+      return n.x-(team.homebase_x+team.homebase_width);
+    } else { // n is in the fourth quadrant; use euclidean distance to calculate distance to "origo"
+      return Math.sqrt(Math.pow((team.homebase_x+team.homebase_width)-n.x, 2)+Math.pow((team.homebase_y+team.homebase_height)-n.y, 2));
+    }
+  }
+
+  // container used for the A* algorithm
+  class AStarNode {
+    Node node;
+    double fValue;
+    double gValue;
+    AStarNode visitedThrough;
+
+    AStarNode(Node node, double fValue, double gValue, AStarNode visitedThrough) {
+      this.node = node;
+      this.fValue = fValue;
+      this.gValue = gValue;
+      this.visitedThrough = visitedThrough;
+    }
+    @Override
+      public String toString() {
+      return "(" + node.col +  ", "+ node.row  + ")" + " + " + "(" +fValue+ "), ";
+    }
+  }
+
+  //Static?
+  class HeuristicsComparator implements Comparator<AStarNode> {
+    @Override
+      public int compare(AStarNode n1, AStarNode n2) {
+      return n1.fValue > n2.fValue ? 1 : -1;
+    }
+  }
+
+//  //TODO: ta bort metod! Används endast för att testa A*
+//  void testAStarAlgorithmByAddingPatrolledNodes() {
+//    //SHORTEST
+//    //patrolled.put(grid.nodes[2][6], 0);
+//    patrolled.put(grid.nodes[2][7], 0);
+//    patrolled.put(grid.nodes[2][8], 0); // but should skip this one
+//    patrolled.put(grid.nodes[3][8], 0);
+//    patrolled.put(grid.nodes[4][8], 0);
+//    patrolled.put(grid.nodes[5][9], 0);
+//    patrolled.put(grid.nodes[6][10], 0);
+
+
+//    //Longer path
+//    patrolled.put(grid.nodes[6][9], 0);
+//    patrolled.put(grid.nodes[6][8], 0);
+//    patrolled.put(grid.nodes[6][7], 0);
+//    patrolled.put(grid.nodes[6][6], 0);
+//    //patrolled.put(grid.nodes[5][6], 0);
+//    patrolled.put(grid.nodes[4][6], 0);
+//    patrolled.put(grid.nodes[3][6], 0);
+    
+    
+//    patrolled.put(grid.nodes[6][11], 0);
+//    patrolled.put(grid.nodes[6][12], 0);
+//    patrolled.put(grid.nodes[6][13], 0);
+//    patrolled.put(grid.nodes[6][14], 0);
+//    patrolled.put(grid.nodes[5][14], 0);
+//    patrolled.put(grid.nodes[4][14], 0);
+//    patrolled.put(grid.nodes[3][14], 0);
+//    patrolled.put(grid.nodes[2][14], 0);
+//    patrolled.put(grid.nodes[1][14], 0);
+//    patrolled.put(grid.nodes[0][13], 0);
+//    patrolled.put(grid.nodes[0][12], 0);
+//    patrolled.put(grid.nodes[0][11], 0);
+//    patrolled.put(grid.nodes[0][10], 0);
+//    patrolled.put(grid.nodes[0][9], 0);
+//    patrolled.put(grid.nodes[0][8], 0);
+//    patrolled.put(grid.nodes[0][7], 0);
+//    patrolled.put(grid.nodes[0][6], 0);
+//    patrolled.put(grid.nodes[0][5], 0);
+//    patrolled.put(grid.nodes[0][4], 0);
+//}
 }
+
+
+  private enum Direction {
+    SOUTH,
+    NORTH,
+    EAST,
+    WEST,
+    NORTHEAST,
+    SOUTHEAST,
+    NORTHWEST,
+    SOUTHWEST
+   }
