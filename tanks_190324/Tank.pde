@@ -1,4 +1,4 @@
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -831,6 +831,8 @@ class Tank extends Sprite {
     println("*** Tank["+ this.getId() + "].arrived()");
     this.isMoving = false;  
     okayToGoNextStepHome = true;
+    if(isAtHomebase)
+        goingHome = false;
     stopMoving_state();
   }
 
@@ -1216,6 +1218,9 @@ class Tank extends Sprite {
 
   //*****************************
 
+  //TODO: make better implementation
+  Direction lastDir;
+
   // using A* f(n) = g(n) + h(n)
   void findShortestPathHome() {
     Queue<AStarNode> openQueue = new PriorityQueue<AStarNode>(new HeuristicsComparator());
@@ -1233,13 +1238,27 @@ class Tank extends Sprite {
 
         //WE ARE DONE
         LinkedList<Node> finalPath = new LinkedList<Node>();
+        LinkedList<Node> actualFinalPath = new LinkedList<Node>();
         AStarNode currNode = closedList.getLast();
+        lastDir = getDirection(currNode.node, currNode.visitedThrough.node);
+
+        Direction dir = null;
+        Direction prevDir = null;
+        
         while(currNode != null) {
-          finalPath.addFirst(currNode.node);
+          prevDir = dir;
+          if(currNode.visitedThrough != null) {
+            dir = getDirection(currNode.node, currNode.visitedThrough.node);
+          }
+          if(dir == null ||  dir != prevDir) { 
+            finalPath.addFirst(currNode.node);             
+          }
+          actualFinalPath.addFirst(currNode.node);             
+
           currNode = currNode.visitedThrough;
-                  System.out.println(finalPath);
 
         }
+        System.out.println(actualFinalPath);
         System.out.println(finalPath);
         pathHome = finalPath;
         goingHome = true;
@@ -1276,6 +1295,27 @@ class Tank extends Sprite {
       }
     }
   }
+  
+  Direction getDirection(Node a, Node b) {
+    if(a.x == b.x && a.y > b.y) {
+      return Direction.NORTH;
+    } else if(a.x < b.x && a.y > b.y) {
+      return Direction.NORTHEAST;
+    } else if(a.x < b.x && a.y == b.y) {
+      return Direction.EAST;
+    } else if(a.x < b.x && a.y < b.y) {
+      return Direction.SOUTHEAST;
+    } else if(a.x == b.x && a.y < b.y) {
+      return Direction.SOUTH;
+    } else if(a.x > b.x && a.y < b.y) {
+      return Direction.SOUTHWEST;
+    } else if(a.x > b.x && a.y == b.y) {
+      return Direction.WEST;
+    } else {
+      return Direction.NORTHWEST;
+    }
+  
+  }
 
   // Returns the AStarNode in queue containing the Node node.
   // Returns null if no such AStarNode exists.
@@ -1289,12 +1329,35 @@ class Tank extends Sprite {
 
   // 
   void takePath() {
-    if (pathHome.isEmpty()) {
-      goingHome = false;
-    } else if (okayToGoNextStepHome) {
+    //if (pathHome.isEmpty() && okayToGoNextStepHome) {
+    //  moveTo(startNode.x-1, startNode.y-1);
+    //  goingHome = false;
+    //} else 
+    if (okayToGoNextStepHome) {
       Node next = pathHome.poll();
       okayToGoNextStepHome = false;
-      moveTo(next.x, next.y);
+
+      if (pathHome.isEmpty()) {
+        //TODO: make better implementation
+        int x = 0, y = 0;
+        if(lastDir == Direction.NORTH || lastDir == Direction.NORTHWEST || lastDir == Direction.NORTHEAST) {
+          y = 1;
+        } else if(lastDir == Direction.SOUTH || lastDir == Direction.SOUTHWEST || lastDir == Direction.SOUTHEAST) {
+          y = -1;
+        } 
+        
+        if(lastDir == Direction.EAST || lastDir == Direction.NORTHEAST || lastDir == Direction.SOUTHEAST) {
+          x = -1;
+        } else if(lastDir == Direction.WEST || lastDir == Direction.SOUTHWEST || lastDir == Direction.NORTHWEST) {
+          x = 1;
+        } 
+        
+        moveTo(next.x+1, next.y+y);
+        goingHome = false;
+      } else {
+          moveTo(next.x, next.y);
+      }
+      
     }
   }  
 
@@ -1361,7 +1424,7 @@ class Tank extends Sprite {
   //TODO: ta bort metod! Används endast för att testa A*
   void testAStarAlgorithmByAddingPatrolledNodes() {
     //SHORTEST
-    patrolled.put(grid.nodes[2][6], 0);
+    //patrolled.put(grid.nodes[2][6], 0);
     patrolled.put(grid.nodes[2][7], 0);
     patrolled.put(grid.nodes[2][8], 0); // but should skip this one
     patrolled.put(grid.nodes[3][8], 0);
@@ -1375,8 +1438,41 @@ class Tank extends Sprite {
     patrolled.put(grid.nodes[6][8], 0);
     patrolled.put(grid.nodes[6][7], 0);
     patrolled.put(grid.nodes[6][6], 0);
-    patrolled.put(grid.nodes[5][6], 0);
+    //patrolled.put(grid.nodes[5][6], 0);
     patrolled.put(grid.nodes[4][6], 0);
     patrolled.put(grid.nodes[3][6], 0);
-  }
+    
+    
+    patrolled.put(grid.nodes[6][11], 0);
+    patrolled.put(grid.nodes[6][12], 0);
+    patrolled.put(grid.nodes[6][13], 0);
+    patrolled.put(grid.nodes[6][14], 0);
+    patrolled.put(grid.nodes[5][14], 0);
+    patrolled.put(grid.nodes[4][14], 0);
+    patrolled.put(grid.nodes[3][14], 0);
+    patrolled.put(grid.nodes[2][14], 0);
+    patrolled.put(grid.nodes[1][14], 0);
+    patrolled.put(grid.nodes[0][13], 0);
+    patrolled.put(grid.nodes[0][12], 0);
+    patrolled.put(grid.nodes[0][11], 0);
+    patrolled.put(grid.nodes[0][10], 0);
+    patrolled.put(grid.nodes[0][9], 0);
+    patrolled.put(grid.nodes[0][8], 0);
+    patrolled.put(grid.nodes[0][7], 0);
+    patrolled.put(grid.nodes[0][6], 0);
+    patrolled.put(grid.nodes[0][5], 0);
+    patrolled.put(grid.nodes[0][4], 0);
 }
+}
+
+
+  private enum Direction {
+    SOUTH,
+    NORTH,
+    EAST,
+    WEST,
+    NORTHEAST,
+    SOUTHEAST,
+    NORTHWEST,
+    SOUTHWEST
+   }
