@@ -1,4 +1,4 @@
-class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
   int id;
   //String name; //Sprite
   int team_id;
@@ -822,10 +822,10 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<
   void arrived() {
     println("*** Tank["+ this.getId() + "].arrived()");
     startNode = grid.getNearestNode(this.position);
-    if (!visited.contains(startNode)) {
+    //if (!visited.contains(startNode)) {
       visited.add(startNode);
       startNode.setVisited(true);
-    }
+    //}
     this.isMoving = false;  
     isMovingOnPatroll = false;
     stopMoving_state();
@@ -1220,12 +1220,12 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<
     ArrayList<Node> neighbours_temp = grid.getNodesNeighbours(startNode);
     ArrayList<Node> neighbours = removeVisited(neighbours_temp);
     if (neighbours.isEmpty() || isColliding) {
-      Node temp = new Node(lastVisited.col, lastVisited.row, lastVisited.x, lastVisited.y);
+      Node temp = new Node(visited.get(visited.size()-1).col, visited.get(visited.size()-1).row, visited.get(visited.size()-1).x, visited.get(visited.size()-1).y);
       println("temp  " +temp.position);
       moveTo(temp.position);
       startNode = temp;
       lastVisited = visited.get(visited.size()-1);
-      //visited.add(temp);
+      visited.add(temp);
       isColliding = false;
     } else {
       Node target = grid.getRandomNodeWithin(neighbours);
