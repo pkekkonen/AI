@@ -10,6 +10,7 @@ class Node {
   
   Sprite content;
   boolean isEmpty;
+  int weight;
   
   //***************************************************
   // Node Constructor 
@@ -24,6 +25,8 @@ class Node {
     this.position = new PVector(_posx, _posy);
     this.col = _id_col;
     this.row = _id_row;
+    this.x = _posx;
+    this.y = _posy;
     
     this.content = null;
     this.isEmpty = true;
@@ -54,4 +57,31 @@ class Node {
   Sprite content() {
     return this.content;
   }
+  
+  @Override
+  public boolean equals(Object o) {
+  
+        // If the object is compared with itself then return true  
+        if (o == this) {
+            return true;
+        }
+  
+        /* Check if o is an instance of Complex or not
+          "null instanceof [type]" also returns false */
+        if (!(o instanceof Node)) {
+            return false;
+        }
+          
+        // typecast o to Complex so that we can compare data members 
+        Node n = (Node) o;
+          
+        // Compare the data members and return accordingly 
+        return n.position.x == position.x && n.position.y == position.y;
+    }
+    
+    @Override
+    public int hashCode()
+    {
+        return ((int)x * (int)y / 13 * (int)angle * 7 * 149);
+    }
 }

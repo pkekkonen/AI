@@ -169,6 +169,10 @@ class Grid {
     return rn;
   }
   
+  Node[][] getAllNodes(){
+   return nodes; 
+  }
+  
   //***************************************************
   // Används troligen tillsammans med getNearestNode().empty
   // om tom så addContent(Sprite)

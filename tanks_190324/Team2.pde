@@ -37,6 +37,7 @@ class Team2 extends Team {
     }
 
     public void initialize() {
+      
     }
 
     // Tanken meddelas om kollision med tree.

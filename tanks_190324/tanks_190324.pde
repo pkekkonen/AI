@@ -8,8 +8,7 @@ import ddf.minim.*;
 
 
 
-// Ljud
-Minim minim;
+// Lju//Minim minim;
 SoundManager soundManager;
 
 boolean debugOn = false;
@@ -130,6 +129,12 @@ void setup(){
   timer = new Timer();
   timer.setDirection("down");
   timer.setTime(startTime);
+  new Thread()
+{
+    public void run() {
+       allTanks[0].startPatrol();
+    }
+}.start();
 }
 
 
@@ -139,7 +144,7 @@ void draw() {
   
   if (!gameOver && !pause) {
     // timer används inte i dagsläget.
-    timer.tick(); // Alt.1
+   // timer.tick(); // Alt.1
     float deltaTime = timer.getDeltaSec();
     remainingTime = int(timer.getTotalTime()); 
     if (remainingTime <= 0) {
@@ -176,8 +181,6 @@ void draw() {
    updateTanksDisplay();  
    updateShotsDisplay();
    
-   
-  
   showGUI();
   
 }
