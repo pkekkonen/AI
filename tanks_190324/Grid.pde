@@ -123,11 +123,11 @@ class Grid {
 
   //  return nearestNode;
   //}
-  
+
   //***************************************************  
   PVector getNearestNodePosition(PVector pvec) {
     Node n = getNearestNode(pvec);
-    
+
     return n.position;
   }
 
@@ -186,11 +186,11 @@ class Grid {
     n.addContent(s);
     n.isEmpty = false;
   }
-  
+
   //***************************************************  
   //Ger åter en lista av de åtta närmsta noderna runt en nod (om inte vid en vägg)
-  ArrayList<Node> getNodesNeighbours(Node n) {
-    ArrayList<Node> neighbours = new ArrayList<Node>();  
+  List<Node> getNodesNeighbours(Node n) {
+    List<Node> neighbours = new ArrayList<Node>();  
 
     int currentCol = n.col;
     int currentRow = n.row;

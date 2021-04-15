@@ -24,6 +24,8 @@ class Node {
   // Används vid skapande av grid
   Node(int _id_col, int _id_row, float _posx, float _posy) {
     this.position = new PVector(_posx, _posy);
+    this.x = _posx;
+    this.y = _posy;
     this.col = _id_col;
     this.row = _id_row;
     this.x = _posx; //lägger till x och y till sina värden
@@ -74,6 +76,8 @@ class Node {
     return this.content;
   }
   
+
+  //TODO: implement better?
   @Override
   public boolean equals(Object o){
     if (this == o)
@@ -88,4 +92,5 @@ class Node {
   public String toString() {
     return " (" + col +  ", "+ row  + ") ";//+" x: " + x + " y: " + y;
   }
+
 }

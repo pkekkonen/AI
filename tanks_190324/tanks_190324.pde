@@ -93,7 +93,7 @@ void setup(){
   // Team0
   team0_tank0_startpos = new PVector(50, 50);
   team0_tank1_startpos = new PVector(50, 150);
-  team0_tank2_startpos = new PVector(50, 250);
+  team0_tank2_startpos = new PVector(50+300, 250+300);
 
   // Team1
   team1_tank0_startpos = new PVector(width-50, height-250);
@@ -110,6 +110,8 @@ void setup(){
   allTanks[0] = teams[0].tanks[0];
   allTanks[1] = teams[0].tanks[1];
   allTanks[2] = teams[0].tanks[2];
+  
+  allTanks[2].testAStarAlgorithmByAddingPatrolledNodes();
   
   teams[1] = new Team2(1, tank_size, team1Color, 
                       team1_tank0_startpos, 3, allShots[3],
