@@ -627,7 +627,7 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
     this.isMoving = false;  
 
-    resetTargetStates();
+    //resetTargetStates();
   }
 
   //**************************************************
@@ -821,6 +821,8 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>//
   //**************************************************
   void arrived() {
     println("*** Tank["+ this.getId() + "].arrived()");
+    Node target = new Node(targetPosition.x, targetPosition.y);
+    visited.add(target);
     this.isMoving = false;  
     isMovingOnPatroll = false;
     stopMoving_state();
@@ -1202,11 +1204,12 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>//
   //*****************************************
   void keepPatrolling() {
     isMovingOnPatroll = true;
-
+/*
     if (!visited.contains(startNode)) {
       startNode.setVisited(true);
       visited.add(startNode);
-    }
+      println("startnode " + startNode.position);
+    }*/
     lastVisited = startNode;
 
     println("visited: "+visited);
@@ -1215,23 +1218,24 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>//
     ArrayList<Node> neighbours = removeVisited(neighbours_temp);
     if (neighbours.isEmpty() || isColliding) {
       Node temp = new Node(lastVisited.col, lastVisited.row, lastVisited.x, lastVisited.y);
-      println("temp  " +temp.col + " and " + temp.row);
+      println("temp  " +temp.position);
       moveTo(temp.position);
       startNode = temp;
-      lastVisited = visited.get(visited.size() - 1);
+      lastVisited = visited.get(visited.size()-1);
+      visited.add(temp);
       isColliding = false;
     } else {
       Node target = grid.getRandomNodeWithin(neighbours);
+      //this.targetPosition = target.position;
       println("target  " +target.col + " and " + target.row);
       moveTo(target.position);
       println(grid.getNearestNode(this.position).position);
       println(target.position);
-      if (grid.getNearestNode(this.position).position == target.position) {
-        visited.add(target);
-        target.setVisited(true);
-        lastVisited = target;
-        startNode = target;
-      }
+      //if (grid.getNearestNode(this.position).position == target.position) {
+      target.setVisited(true);
+      lastVisited = target;
+      startNode = target;
+      //}
     }
   }
 
@@ -1242,7 +1246,7 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>//
       println("neighbours: "+n.getVisited() + " and "+ n.empty());
       if (n.getVisited() == false && n.empty()) {
         removed.add(n);
-        println("removed: "+n.col + " and "+ n.row);
+        println("removed: " + n.position);
       }
     }
     return removed;
