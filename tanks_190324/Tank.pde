@@ -1,4 +1,4 @@
-class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
   int id;
   //String name; //Sprite
   int team_id;
@@ -821,8 +821,11 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>//
   //**************************************************
   void arrived() {
     println("*** Tank["+ this.getId() + "].arrived()");
-    Node target = new Node(targetPosition.x, targetPosition.y);
-    visited.add(target);
+    startNode = grid.getNearestNode(this.position);
+    if (!visited.contains(startNode)) {
+      visited.add(startNode);
+      startNode.setVisited(true);
+    }
     this.isMoving = false;  
     isMovingOnPatroll = false;
     stopMoving_state();
@@ -1060,7 +1063,7 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>//
         if (distanceVectMag <= minDistance) {
           println("! Tank["+ this.getId() + "] – FAST I EN ANNAN TANK");
         }
-        
+
         isColliding = true;
         this.isMoving = false;  
         stopMoving_state();
@@ -1204,12 +1207,12 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>//
   //*****************************************
   void keepPatrolling() {
     isMovingOnPatroll = true;
-/*
+    /*
     if (!visited.contains(startNode)) {
-      startNode.setVisited(true);
-      visited.add(startNode);
-      println("startnode " + startNode.position);
-    }*/
+     startNode.setVisited(true);
+     visited.add(startNode);
+     println("startnode " + startNode.position);
+     }*/
     lastVisited = startNode;
 
     println("visited: "+visited);
@@ -1222,7 +1225,7 @@ class Tank extends Sprite { //<>// //<>// //<>// //<>// //<>// //<>// //<>//
       moveTo(temp.position);
       startNode = temp;
       lastVisited = visited.get(visited.size()-1);
-      visited.add(temp);
+      //visited.add(temp);
       isColliding = false;
     } else {
       Node target = grid.getRandomNodeWithin(neighbours);
