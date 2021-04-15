@@ -72,7 +72,8 @@ class Tank extends Sprite {
   boolean isColliding; // Tanken håller på att krocka.
   boolean isAtHomebase;
   boolean userControlled; // Om användaren har tagit över kontrollen.
-  boolean goingHome;
+  boolean isReporting;
+  boolean isReportingInHomebase;
   boolean okayToGoNextStepHome;
 
   boolean hasShot; // Tanken kan bara skjuta om den har laddat kanonen, hasShot=true.
@@ -100,7 +101,8 @@ class Tank extends Sprite {
   private ArrayList<Node> enemyNodes = new ArrayList<Node>();
   private Node lastVisitedNode;
 
-
+  // Used to make sure tank stays still for three seconds after reporting to homebase
+  StopWatchTimer timer;
 
   //Shortest path home 
   private LinkedList<Node> pathHome = new LinkedList<Node>();
@@ -148,7 +150,8 @@ class Tank extends Sprite {
     this.isRotating = false;
     this.isAtHomebase = true;
     this.idle_state = true;
-    this.goingHome = false;
+    this.isReporting = false;
+    this.isReportingInHomebase = false;
     this.okayToGoNextStepHome = true;
 
     this.ball = ball;
@@ -161,7 +164,6 @@ class Tank extends Sprite {
     this.isColliding = false;
     this.patrolling = false;
     this.tankAhead = false;
-    this.goingHome = false;
 
     //this.img = loadImage("tankBody2.png");
     this.turret = new Turret(this.diameter/2);
@@ -558,7 +560,7 @@ class Tank extends Sprite {
 
   //**************************************************
   void moveTo(float x, float y) {
-    println("*** Tank["+ this.getId() + "].moveTo(float x, float y)");
+    println("*** Tank["+ this.getId() + "].moveTo(" +x +", "+ y+")");
 
     moveTo(new PVector(x, y));
   }
@@ -857,8 +859,6 @@ class Tank extends Sprite {
     println("*** Tank["+ this.getId() + "].arrived()");
     this.isMoving = false;  
     okayToGoNextStepHome = true;
-    if(isAtHomebase)
-        goingHome = false;
     stopMoving_state();
   }
 
@@ -899,8 +899,18 @@ class Tank extends Sprite {
         if (!this.isImmobilized && this.isReady) {  
           
           //TODO: ta bort if-sats! Används endast för att testa A*
-          if (goingHome) {
+          if (isReporting) {
             takePath();
+          } else if (isReportingInHomebase){
+            // If we are done with reporting, go back to patrolling.
+             println("TIME: "+ timer.seconds());
+
+             if(timer != null && timer.seconds() >= 3) {
+                timer.stop();
+                timer = null;
+                isReportingInHomebase = false;
+                startPatrol();
+             }
           }
           
           // Om tanken är i rörelse.
@@ -999,6 +1009,14 @@ class Tank extends Sprite {
       position.y < team.homebase_y+team.homebase_height) {
       if (!isAtHomebase) {
         isAtHomebase = true;
+        
+        // checks if reporting tank has just arrived to the homebase
+        if (isReporting) {
+          timer = new StopWatchTimer();
+          timer.start();
+          isReporting = false;
+          isReportingInHomebase = true;
+        }
         message_arrivedAtHomebase();
       }
     } else {
@@ -1255,8 +1273,8 @@ class Tank extends Sprite {
    }*/
 
 
-  void goHome() {
-    goingHome = true;
+  void report() {
+    isReporting = true;
     findShortestPathHome();
    System.out.println("I should go.");
   }
@@ -1270,14 +1288,14 @@ class Tank extends Sprite {
     assignCostValue(new ArrayList<Node>(), currentNode);
     patrolling = true;
     //getView();
-    Node target = getNextTarget(currentNode, lastVisitedNode);
+    Node target = getNextTarget();
     PVector vectorTarget = new PVector(target.x, target.y);
     moveTo(vectorTarget);
     while (patrolling) {
 
       if (tankAhead || collidedWithTank) {
         patrolling = false;
-        goingHome = true;
+        isReporting = true;
         break;
       }
       if (collidedWithTree) {
@@ -1305,7 +1323,7 @@ class Tank extends Sprite {
         assignCostValue(new ArrayList<Node>(), currentNode);
         System.out.println();
         //getView();
-        target = getNextTarget(currentNode, lastVisitedNode);
+        target = getNextTarget();
 
         vectorTarget = new PVector(target.x, target.y);
         //lastVisitedNode = currentNode;
@@ -1313,7 +1331,7 @@ class Tank extends Sprite {
         moveTo(vectorTarget);
       }
     }
-    goHome();
+    report();
   }
 
   void assignCostValue(ArrayList<Node> finished, Node n) {
@@ -1367,9 +1385,9 @@ class Tank extends Sprite {
     return neighbors;
   }
 
-  Node getNextTarget(Node current, Node visited) {
+  Node getNextTarget() {
     Node target = null; 
-    ArrayList<Node> neighbors = getNeighboringNodes(current); 
+    ArrayList<Node> neighbors = getNeighboringNodes(currentNode); 
     Collections.shuffle(neighbors); 
     for (Node temp : neighbors) {
       /*if(temp.equals(visited)){
@@ -1427,8 +1445,8 @@ class Tank extends Sprite {
   void findShortestPathHome() {
     Queue<AStarNode> openQueue = new PriorityQueue<AStarNode>(new HeuristicsComparator());
     LinkedList<AStarNode> closedList = new LinkedList<AStarNode>(); 
-    openQueue.add(new AStarNode(this.startNode, calculateHeuristics(this.startNode), 0, null)); //adding start node
-
+    openQueue.add(new AStarNode(currentNode, calculateHeuristics(currentNode), 0, null)); //adding start node
+    println("FINDING SHORTESt: curr " + currentNode);
     AStarNode current;
     
     while (!openQueue.isEmpty()) {
@@ -1455,15 +1473,13 @@ class Tank extends Sprite {
           if(dir == null ||  dir != prevDir) { 
             finalPath.addFirst(currNode.node);             
           }
-          actualFinalPath.addFirst(currNode.node);             
-
+          actualFinalPath.addFirst(currNode.node);               
           currNode = currNode.visitedThrough;
 
         }
         System.out.println(actualFinalPath);
         System.out.println(finalPath);
         pathHome = finalPath;
-        goingHome = true;
 
         return;
       }
@@ -1531,11 +1547,8 @@ class Tank extends Sprite {
 
   // 
   void takePath() {
-    //if (pathHome.isEmpty() && okayToGoNextStepHome) {
-    //  moveTo(startNode.x-1, startNode.y-1);
-    //  goingHome = false;
-    //} else 
-    if (okayToGoNextStepHome) {
+
+    if (okayToGoNextStepHome && !pathHome.isEmpty()) {
       Node next = pathHome.poll();
       okayToGoNextStepHome = false;
 
@@ -1554,8 +1567,10 @@ class Tank extends Sprite {
           x = 1;
         } 
         
-        moveTo(next.x+1, next.y+y);
-        goingHome = false;
+        float a = next.x+x;
+        float b = next.y+y;
+        println("final MOVE: " + a +", "+ b );
+        moveTo(next.x+x, next.y+y);
       } else {
           moveTo(next.x, next.y);
       }
@@ -1665,6 +1680,38 @@ class Tank extends Sprite {
 //    patrolled.put(grid.nodes[0][5], 0);
 //    patrolled.put(grid.nodes[0][4], 0);
 //}
+
+
+  // Got from https://forum.processing.org/one/topic/timer-in-processing.html. The class is used to make sure the tank stays still for three seconds after reporting to its homebase 
+  class StopWatchTimer {
+  int startTime = 0, stopTime = 0;
+  boolean running = false;  
+  
+   
+    void start() {
+        startTime = millis();
+        running = true;
+    }
+    void stop() {
+        stopTime = millis();
+        running = false;
+    }
+    int getElapsedTime() {
+        int elapsed;
+        if (running) {
+             elapsed = (millis() - startTime);
+        }
+        else {
+            elapsed = (stopTime - startTime);
+        }
+        return elapsed;
+    }
+    int seconds() {
+      return (getElapsedTime() / 1000) % 60;
+    }
+  }
+
+
 }
 
 
