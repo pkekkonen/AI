@@ -132,7 +132,7 @@ void setup(){
   new Thread()
 {
     public void run() {
-       allTanks[0].startPatrol();
+       allTanks[0].startPatrolling();
     }
 }.start();
 }

@@ -1,4 +1,4 @@
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -188,12 +188,11 @@ class Tank extends Sprite {
         if (nodes[i][j].x > team.homebase_x && nodes[i][j].x < team.homebase_x+team.homebase_width && nodes[i][j].y > team.homebase_y && nodes[i][j].y < team.homebase_x+team.homebase_height) {
           patrolled.put(nodes[i][j], -1);
           homeNodes.add(nodes[i][j]);
-        } else if (nodes[i][j].x > width-150 && nodes[i][j].x < width && nodes[i][j].y > height-300 && nodes[i][j].y < height) {
+        } else if (nodes[i][j].x > width-150 && nodes[i][j].x < width && nodes[i][j].y > height-350 && nodes[i][j].y < height) {
           enemyNodes.add(nodes[i][j]);
         }
       }
     }
-
 
     initializeSensors();
   }
@@ -569,7 +568,8 @@ class Tank extends Sprite {
   void moveTo(PVector coord) {
     //println("*** Tank["+ this.getId() + "].moveTo(PVector)");
     if (!isImmobilized) {
-      println("*** Tank["+ this.getId() + "].moveTo(PVector)");
+    println("*** Tank["+ this.getId() + "].moveTo(" +coord.x +", "+ coord.y+")");
+
 
       this.idle_state = false;
       this.isMoving = true;
@@ -897,22 +897,32 @@ class Tank extends Sprite {
 
         // Om tanken är redo för handling och kan agera.
         if (!this.isImmobilized && this.isReady) {  
-          
+
           //TODO: ta bort if-sats! Används endast för att testa A*
           if (isReporting) {
             takePath();
-          } else if (isReportingInHomebase){
+          } else if (isReportingInHomebase) {
             // If we are done with reporting, go back to patrolling.
-             println("TIME: "+ timer.seconds());
 
-             if(timer != null && timer.seconds() >= 3) {
-                timer.stop();
-                timer = null;
-                isReportingInHomebase = false;
-                startPatrol();
-             }
+            if (timer != null && timer.seconds() >= 3) {
+              println("TIME: "+ timer.seconds());
+
+              timer.stop();
+              timer = null;
+              lastVisitedNode=null;
+              isReportingInHomebase = false;
+              isReporting = false;
+              tankAhead = false;
+              startPatrolling();
+              println("EFTER: ");
+
+            }
           }
           
+          if(patrolling) {
+            keepPatrolling();
+          }
+
           // Om tanken är i rörelse.
           if (this.isMoving) {
 
@@ -1009,7 +1019,7 @@ class Tank extends Sprite {
       position.y < team.homebase_y+team.homebase_height) {
       if (!isAtHomebase) {
         isAtHomebase = true;
-        
+
         // checks if reporting tank has just arrived to the homebase
         if (isReporting) {
           timer = new StopWatchTimer();
@@ -1275,13 +1285,17 @@ class Tank extends Sprite {
 
   void report() {
     isReporting = true;
+    tankAhead = false;
+    System.out.println("I should go.");
+
     findShortestPathHome();
-   System.out.println("I should go.");
   }
 
+  PVector vectorTarget;
 
-
-  void startPatrol() {
+  void startPatrolling() {
+    patrolling = true;
+    currentNode = grid.getNearestNode(position);
     if (lastVisitedNode == null) {
       lastVisitedNode = currentNode;
     }
@@ -1289,16 +1303,25 @@ class Tank extends Sprite {
     patrolling = true;
     //getView();
     Node target = getNextTarget();
-    PVector vectorTarget = new PVector(target.x, target.y);
-    moveTo(vectorTarget);
-    while (patrolling) {
+    System.out.println("pATROLLING TO " + target);
+    System.out.println("current " + currentNode);
 
-      if (tankAhead || collidedWithTank) {
+    vectorTarget = new PVector(target.x, target.y);
+    moveTo(vectorTarget);
+  }
+  void keepPatrolling() {
+
+      if (tankAhead) {
+        if(collidedWithTank) {
+          vectorTarget = new PVector(lastVisitedNode.x, lastVisitedNode.y);
+          moveTo(vectorTarget);
+          collidedWithTank = false;
+        }
         patrolling = false;
         isReporting = true;
-        break;
-      }
-      if (collidedWithTree) {
+        report();
+        return;      
+      } else if (collidedWithTree) {
         currentNode = grid.getNearestNode(position);
         System.out.println("AH! A TREE!");
         patrolled.put(target, Integer.MAX_VALUE);
@@ -1308,8 +1331,7 @@ class Tank extends Sprite {
         moveTo(vectorTarget);
         patrolled.put(currentNode, -1);
         assignCostValue(new ArrayList<Node>(), currentNode);
-        startPatrol();
-        return;
+        startPatrolling();
       }
       if (grid.getNearestNode(position) != currentNode) {
         lastVisitedNode = currentNode;
@@ -1330,8 +1352,7 @@ class Tank extends Sprite {
         showGrid();
         moveTo(vectorTarget);
       }
-    }
-    report();
+    
   }
 
   void assignCostValue(ArrayList<Node> finished, Node n) {
@@ -1343,7 +1364,7 @@ class Tank extends Sprite {
       }
       if (!patrolled.containsKey(temp)) {
         if ((temp.position.y+r >= height) || (temp.position.y-r <= 0) ||
-          (temp.position.x+r >= width) || (temp.position.x-r <= 0)) {
+          (temp.position.x+r >= width) || (temp.position.x-r <= 0) || temp.content instanceof Tree) { 
           patrolled.put(temp, Integer.MAX_VALUE);
         } else {
           patrolled.put(n, 1);
@@ -1432,7 +1453,7 @@ class Tank extends Sprite {
     float distanceVectMag = distanceVect.mag(); 
     float minDistance = this.radius + other.radius; 
     if (distanceVectMag <= minDistance) {
-      tankAhead = true; 
+      tankAhead = true;
     }
   }
 
@@ -1448,7 +1469,7 @@ class Tank extends Sprite {
     openQueue.add(new AStarNode(currentNode, calculateHeuristics(currentNode), 0, null)); //adding start node
     println("FINDING SHORTESt: curr " + currentNode);
     AStarNode current;
-    
+
     while (!openQueue.isEmpty()) {
       current = openQueue.poll();
       closedList.add(current);
@@ -1464,18 +1485,17 @@ class Tank extends Sprite {
 
         Direction dir = null;
         Direction prevDir = null;
-        
-        while(currNode != null) {
+
+        while (currNode != null) {
           prevDir = dir;
-          if(currNode.visitedThrough != null) {
+          if (currNode.visitedThrough != null) {
             dir = getDirection(currNode.node, currNode.visitedThrough.node);
           }
-          if(dir == null ||  dir != prevDir) { 
-            finalPath.addFirst(currNode.node);             
+          if (dir == null ||  dir != prevDir) { 
+            finalPath.addFirst(currNode.node);
           }
           actualFinalPath.addFirst(currNode.node);               
           currNode = currNode.visitedThrough;
-
         }
         System.out.println(actualFinalPath);
         System.out.println(finalPath);
@@ -1513,26 +1533,25 @@ class Tank extends Sprite {
       }
     }
   }
-  
+
   Direction getDirection(Node a, Node b) {
-    if(a.x == b.x && a.y > b.y) {
+    if (a.x == b.x && a.y > b.y) {
       return Direction.NORTH;
-    } else if(a.x < b.x && a.y > b.y) {
+    } else if (a.x < b.x && a.y > b.y) {
       return Direction.NORTHEAST;
-    } else if(a.x < b.x && a.y == b.y) {
+    } else if (a.x < b.x && a.y == b.y) {
       return Direction.EAST;
-    } else if(a.x < b.x && a.y < b.y) {
+    } else if (a.x < b.x && a.y < b.y) {
       return Direction.SOUTHEAST;
-    } else if(a.x == b.x && a.y < b.y) {
+    } else if (a.x == b.x && a.y < b.y) {
       return Direction.SOUTH;
-    } else if(a.x > b.x && a.y < b.y) {
+    } else if (a.x > b.x && a.y < b.y) {
       return Direction.SOUTHWEST;
-    } else if(a.x > b.x && a.y == b.y) {
+    } else if (a.x > b.x && a.y == b.y) {
       return Direction.WEST;
     } else {
       return Direction.NORTHWEST;
     }
-  
   }
 
   // Returns the AStarNode in queue containing the Node node.
@@ -1555,26 +1574,26 @@ class Tank extends Sprite {
       if (pathHome.isEmpty()) {
         //TODO: make better implementation
         int x = 0, y = 0;
-        if(lastDir == Direction.NORTH || lastDir == Direction.NORTHWEST || lastDir == Direction.NORTHEAST) {
-          y = 1;
-        } else if(lastDir == Direction.SOUTH || lastDir == Direction.SOUTHWEST || lastDir == Direction.SOUTHEAST) {
-          y = -1;
+        if (lastDir == Direction.NORTH || lastDir == Direction.NORTHWEST || lastDir == Direction.NORTHEAST) {
+          y = 50;
+        } else if (lastDir == Direction.SOUTH || lastDir == Direction.SOUTHWEST || lastDir == Direction.SOUTHEAST) {
+          y = -50;
         } 
-        
-        if(lastDir == Direction.EAST || lastDir == Direction.NORTHEAST || lastDir == Direction.SOUTHEAST) {
-          x = -1;
-        } else if(lastDir == Direction.WEST || lastDir == Direction.SOUTHWEST || lastDir == Direction.NORTHWEST) {
-          x = 1;
+
+        if (lastDir == Direction.EAST || lastDir == Direction.NORTHEAST || lastDir == Direction.SOUTHEAST) {
+          x = -50;
+        } else if (lastDir == Direction.WEST || lastDir == Direction.SOUTHWEST || lastDir == Direction.NORTHWEST) {
+          x = 50;
         } 
-        
+
         float a = next.x+x;
         float b = next.y+y;
         println("final MOVE: " + a +", "+ b );
+        currentNode = next;
         moveTo(next.x+x, next.y+y);
       } else {
-          moveTo(next.x, next.y);
+        moveTo(next.x, next.y);
       }
-      
     }
   }  
 
@@ -1599,12 +1618,12 @@ class Tank extends Sprite {
   }
 
   double calculateHeuristics(Node n) {
-    
+
     //If we think of the game plan as a coordinate system where the point (team.homebase_x+team.homebase_width, team.homebase_y+team.homebase_height) is origo,
     //then the following if-statements determines whether the Node n is in the first, third or fourth quadrant and calculates accordingly
-    if(n.x <= team.homebase_x+team.homebase_width) { // n is in the third quadrant
+    if (n.x <= team.homebase_x+team.homebase_width) { // n is in the third quadrant
       return n.y-(team.homebase_y+team.homebase_height);
-    } else if(n.y <= team.homebase_y+team.homebase_height) { // n is in the first quadrant
+    } else if (n.y <= team.homebase_y+team.homebase_height) { // n is in the first quadrant
       return n.x-(team.homebase_x+team.homebase_width);
     } else { // n is in the fourth quadrant; use euclidean distance to calculate distance to "origo"
       return Math.sqrt(Math.pow((team.homebase_x+team.homebase_width)-n.x, 2)+Math.pow((team.homebase_y+team.homebase_height)-n.y, 2));
@@ -1638,90 +1657,87 @@ class Tank extends Sprite {
     }
   }
 
-//  //TODO: ta bort metod! Används endast för att testa A*
-//  void testAStarAlgorithmByAddingPatrolledNodes() {
-//    //SHORTEST
-//    //patrolled.put(grid.nodes[2][6], 0);
-//    patrolled.put(grid.nodes[2][7], 0);
-//    patrolled.put(grid.nodes[2][8], 0); // but should skip this one
-//    patrolled.put(grid.nodes[3][8], 0);
-//    patrolled.put(grid.nodes[4][8], 0);
-//    patrolled.put(grid.nodes[5][9], 0);
-//    patrolled.put(grid.nodes[6][10], 0);
+  //  //TODO: ta bort metod! Används endast för att testa A*
+  //  void testAStarAlgorithmByAddingPatrolledNodes() {
+  //    //SHORTEST
+  //    //patrolled.put(grid.nodes[2][6], 0);
+  //    patrolled.put(grid.nodes[2][7], 0);
+  //    patrolled.put(grid.nodes[2][8], 0); // but should skip this one
+  //    patrolled.put(grid.nodes[3][8], 0);
+  //    patrolled.put(grid.nodes[4][8], 0);
+  //    patrolled.put(grid.nodes[5][9], 0);
+  //    patrolled.put(grid.nodes[6][10], 0);
 
 
-//    //Longer path
-//    patrolled.put(grid.nodes[6][9], 0);
-//    patrolled.put(grid.nodes[6][8], 0);
-//    patrolled.put(grid.nodes[6][7], 0);
-//    patrolled.put(grid.nodes[6][6], 0);
-//    //patrolled.put(grid.nodes[5][6], 0);
-//    patrolled.put(grid.nodes[4][6], 0);
-//    patrolled.put(grid.nodes[3][6], 0);
-    
-    
-//    patrolled.put(grid.nodes[6][11], 0);
-//    patrolled.put(grid.nodes[6][12], 0);
-//    patrolled.put(grid.nodes[6][13], 0);
-//    patrolled.put(grid.nodes[6][14], 0);
-//    patrolled.put(grid.nodes[5][14], 0);
-//    patrolled.put(grid.nodes[4][14], 0);
-//    patrolled.put(grid.nodes[3][14], 0);
-//    patrolled.put(grid.nodes[2][14], 0);
-//    patrolled.put(grid.nodes[1][14], 0);
-//    patrolled.put(grid.nodes[0][13], 0);
-//    patrolled.put(grid.nodes[0][12], 0);
-//    patrolled.put(grid.nodes[0][11], 0);
-//    patrolled.put(grid.nodes[0][10], 0);
-//    patrolled.put(grid.nodes[0][9], 0);
-//    patrolled.put(grid.nodes[0][8], 0);
-//    patrolled.put(grid.nodes[0][7], 0);
-//    patrolled.put(grid.nodes[0][6], 0);
-//    patrolled.put(grid.nodes[0][5], 0);
-//    patrolled.put(grid.nodes[0][4], 0);
-//}
+  //    //Longer path
+  //    patrolled.put(grid.nodes[6][9], 0);
+  //    patrolled.put(grid.nodes[6][8], 0);
+  //    patrolled.put(grid.nodes[6][7], 0);
+  //    patrolled.put(grid.nodes[6][6], 0);
+  //    //patrolled.put(grid.nodes[5][6], 0);
+  //    patrolled.put(grid.nodes[4][6], 0);
+  //    patrolled.put(grid.nodes[3][6], 0);
+
+
+  //    patrolled.put(grid.nodes[6][11], 0);
+  //    patrolled.put(grid.nodes[6][12], 0);
+  //    patrolled.put(grid.nodes[6][13], 0);
+  //    patrolled.put(grid.nodes[6][14], 0);
+  //    patrolled.put(grid.nodes[5][14], 0);
+  //    patrolled.put(grid.nodes[4][14], 0);
+  //    patrolled.put(grid.nodes[3][14], 0);
+  //    patrolled.put(grid.nodes[2][14], 0);
+  //    patrolled.put(grid.nodes[1][14], 0);
+  //    patrolled.put(grid.nodes[0][13], 0);
+  //    patrolled.put(grid.nodes[0][12], 0);
+  //    patrolled.put(grid.nodes[0][11], 0);
+  //    patrolled.put(grid.nodes[0][10], 0);
+  //    patrolled.put(grid.nodes[0][9], 0);
+  //    patrolled.put(grid.nodes[0][8], 0);
+  //    patrolled.put(grid.nodes[0][7], 0);
+  //    patrolled.put(grid.nodes[0][6], 0);
+  //    patrolled.put(grid.nodes[0][5], 0);
+  //    patrolled.put(grid.nodes[0][4], 0);
+  //}
 
 
   // Got from https://forum.processing.org/one/topic/timer-in-processing.html. The class is used to make sure the tank stays still for three seconds after reporting to its homebase 
   class StopWatchTimer {
-  int startTime = 0, stopTime = 0;
-  boolean running = false;  
-  
-   
+    int startTime = 0, stopTime = 0;
+    boolean running = false;  
+
+
     void start() {
-        startTime = millis();
-        running = true;
+      startTime = millis();
+      running = true;
     }
     void stop() {
-        stopTime = millis();
-        running = false;
+      stopTime = millis();
+      running = false;
     }
     int getElapsedTime() {
-        int elapsed;
-        if (running) {
-             elapsed = (millis() - startTime);
-        }
-        else {
-            elapsed = (stopTime - startTime);
-        }
-        return elapsed;
+      int elapsed;
+      if (running) {
+        elapsed = (millis() - startTime);
+      } else {
+        elapsed = (stopTime - startTime);
+      }
+      return elapsed;
     }
     int seconds() {
       return (getElapsedTime() / 1000) % 60;
     }
   }
-
-
 }
 
 
-  private enum Direction {
-    SOUTH,
-    NORTH,
-    EAST,
-    WEST,
-    NORTHEAST,
-    SOUTHEAST,
-    NORTHWEST,
+private enum Direction {
+  SOUTH, 
+    NORTH, 
+    EAST, 
+    WEST, 
+    NORTHEAST, 
+    SOUTHEAST, 
+    NORTHWEST, 
     SOUTHWEST
-   }
+}
