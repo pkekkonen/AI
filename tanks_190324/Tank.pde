@@ -1,6 +1,6 @@
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
-import java.util.Queue;
+import java.util.Queue; //<>//
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Collections;
@@ -1287,36 +1287,34 @@ class Tank extends Sprite {
    assignCostValue(new ArrayList<Node>(), n);
    }
    }*/
-
-
+  
+  //Denna metod sätter tankens status till att den ska tillbaka till basen
   void report() {
     isReporting = true;
     tankAhead = false;
-    System.out.println("I should go.");
 
     findShortestPathHome();
   }
 
-  PVector vectorTarget;
-
+  PVector vectorTarget; //Nästa mål i vektorformat
+  
+  //Denna metod påbörjar patrulleringen
   void startPatrolling() {
     patrolling = true;
-    currentNode = grid.getNearestNode(position);
+    currentNode = grid.getNearestNode(position); //Hämtar noden som är närmast tankens nuvarande position
     if (lastVisitedNode == null) {
       lastVisitedNode = currentNode;
     }
     assignCostValue(new ArrayList<Node>(), currentNode);
     patrolling = true;
-    //getView();
     Node target = getNextTarget();
-    System.out.println("pATROLLING TO " + target);
-    System.out.println("current " + currentNode);
 
     vectorTarget = new PVector(target.x, target.y);
-    moveTo(vectorTarget);
+    moveTo(vectorTarget); 
   }
   void keepPatrolling() {
 
+      //Om det är en tank framför en så ska tanken återvända till senast besökta noden som en reträtt
       if (tankAhead) {
         if(collidedWithTank) {
           vectorTarget = new PVector(lastVisitedNode.x, lastVisitedNode.y);
@@ -1327,9 +1325,10 @@ class Tank extends Sprite {
         isReporting = true;
         report();
         return;      
+        
+        //Om tanken kolliderat med ett träd så ska den gå tillbaka till senast besökta noden och ge noden som trädet sitter på ett värde som aldrig gör den mer värd än andra noder
       } else if (collidedWithTree) {
         currentNode = grid.getNearestNode(position);
-        System.out.println("AH! A TREE!");
         patrolled.put(target, Integer.MAX_VALUE);
         vectorTarget = new PVector(lastVisitedNode.x, lastVisitedNode.y);
         collidedWithTree = false;
@@ -1339,27 +1338,23 @@ class Tank extends Sprite {
         assignCostValue(new ArrayList<Node>(), currentNode);
         startPatrolling();
       }
+      
+      //Om tanken är på en ny plats så ska den omdeklarera vad som är dens nuvarande nod och dess senaste nod
+      //Sätt nuvarande noden i listan över patrullerade noder, med värdet -1 för att signalera att den inte är uträknad
       if (grid.getNearestNode(position) != currentNode) {
         lastVisitedNode = currentNode;
         currentNode = grid.getNearestNode(position);
         patrolled.put(currentNode, -1);
-        System.out.print("Neighbors: ");
-        for (Node n : getNeighboringNodes(currentNode)) {
-          System.out.print(n.x + " " + n.y + " | ");
-        }
-        System.out.println();
         assignCostValue(new ArrayList<Node>(), currentNode);
-        System.out.println();
-        //getView();
         target = getNextTarget();
 
         vectorTarget = new PVector(target.x, target.y);
-        //lastVisitedNode = currentNode;
-        showGrid();
         moveTo(vectorTarget);
       }
     
   }
+
+  //Denna metod kollar en nods alla grannar, om nån av dem är opatrullerad får noden värdet 1, då den är 1 steg från ett mål
 
   void assignCostValue(ArrayList<Node> finished, Node n) {
     ArrayList<Node> neighbors = getNeighboringNodes(n);
@@ -1385,6 +1380,8 @@ class Tank extends Sprite {
       }
     }
   } 
+  
+  //Denna metod kollar alla grannar hos en nod och kollar om deras värde är dess värde är dess värde plus 1, eller lägre, och ändrar om inte.
   void backPropagate(Node n, int i) {
     for (Node temp : getNeighboringNodes(n)) {
       if (patrolled.containsKey(temp) && (patrolled.get(temp) == -1 || (patrolled.get(temp) > i+1 && patrolled.get(temp) != Integer.MAX_VALUE))) {
@@ -1393,39 +1390,32 @@ class Tank extends Sprite {
       }
     }
   }
-
+  
+  //Returnerar alla närliggande noder till noden current
   ArrayList<Node> getNeighboringNodes(Node current) {
     ArrayList<Node> neighbors = new ArrayList<Node>(); 
     for (int i = -1; i < 2; i++) {
       for (int j = -1; j < 2; j++) {
-        //println("getNN.   i :" + i + " j:" + j);
-        if ((current.col + i >= 0) && (current.row + j >= 0) && !(i == 0 && j == 0) //
-          && (current.col + i <= 14) && (current.row + j <= 14)) { //
+        if ((current.col + i >= 0) && (current.row + j >= 0) && !(i == 0 && j == 0) 
+          && (current.col + i <= 14) && (current.row + j <= 14)) { 
           Node n = new Node(current.col + i, current.row + j, ((current.col + i)*grid.grid_size+grid.grid_size), ((current.row+j)*grid.grid_size+grid.grid_size)); 
-          // Node n = new Node(current.col +i, current.row + j, i*grid.grid_size+grid.grid_size, j*grid.grid_size+grid.grid_size);
-          //if (!(patrolled.containsKey(n))) {
           neighbors.add(n); 
-          //}
         }
       }
     }
     return neighbors;
   }
-
+  
+  //Returnerar nästa mål baserat på vilken av noderna som har lägst värde, om noden ej är patrullerad så returneras den direkt
+  //Slumpfaktor är tillsatt för att testa att agenten agerar korrekt i olika rutter
   Node getNextTarget() {
     Node target = null; 
     ArrayList<Node> neighbors = getNeighboringNodes(currentNode); 
     Collections.shuffle(neighbors); 
     for (Node temp : neighbors) {
-      /*if(temp.equals(visited)){
-       System.out.println("Just visited " + temp.x + " " + temp.y);
-       continue;
-       }*/
       if (!patrolled.containsKey(temp)) {
         return temp;
       }
-
-
       if ((target == null || patrolled.get(temp) < patrolled.get(target)) && patrolled.get(temp) > -1) {
         target = temp;
       }
@@ -1438,18 +1428,15 @@ class Tank extends Sprite {
       for (int j = 0; j < grid.nodes[i].length; j++) {
         if (patrolled.containsKey(grid.nodes[j][i])) {
           if (patrolled.get(grid.nodes[j][i]) == Integer.MAX_VALUE) {
-            System.out.print("& ");
           } else {
-            System.out.print(patrolled.get(grid.nodes[j][i]) + " ");
           }
         } else {
-          System.out.print(0 + " ");
         }
       }
-      System.out.println();
     }
   }
-
+  
+  //Kollar om någon av fiendetankerna är framför tankens synfält
   void checkTankForward(Tank other) {
     if (!enemyNodes.contains(grid.getNearestNode(position))) {
       return;
@@ -1473,7 +1460,6 @@ class Tank extends Sprite {
     Queue<AStarNode> openQueue = new PriorityQueue<AStarNode>(new HeuristicsComparator());
     LinkedList<AStarNode> closedList = new LinkedList<AStarNode>(); 
     openQueue.add(new AStarNode(currentNode, calculateHeuristics(currentNode), 0, null)); //adding start node
-    println("FINDING SHORTESt: curr " + currentNode);
     AStarNode current;
 
     while (!openQueue.isEmpty()) {
@@ -1503,8 +1489,6 @@ class Tank extends Sprite {
           actualFinalPath.addFirst(currNode.node);               
           currNode = currNode.visitedThrough;
         }
-        System.out.println(actualFinalPath);
-        System.out.println(finalPath);
         pathHome = finalPath;
 
         return;
@@ -1594,7 +1578,6 @@ class Tank extends Sprite {
 
         float a = next.x+x;
         float b = next.y+y;
-        println("final MOVE: " + a +", "+ b );
         currentNode = next;
         moveTo(next.x+x, next.y+y);
       } else {
