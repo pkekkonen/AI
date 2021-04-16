@@ -1372,11 +1372,11 @@ class Tank extends Sprite {
 
   // using A* f(n) = g(n) + h(n)
   void findShortestPathHome() {
-    println("find shortest path home");
+    println("Find shortest path home");
     Queue<AStarNode> openQueue = new PriorityQueue<AStarNode>(new HeuristicsComparator());
     LinkedList<AStarNode> closedList = new LinkedList<AStarNode>(); 
     openQueue.add(new AStarNode(this.startNode, calculateHeuristics(this.startNode), 0, null)); //adding start node
-
+    println("FINDING SHORTESt: curr " + this.startNode);
     AStarNode current;
     
     while (!openQueue.isEmpty()) {
@@ -1403,15 +1403,13 @@ class Tank extends Sprite {
           if(dir == null ||  dir != prevDir) { 
             finalPath.addFirst(currNode.node);             
           }
-          actualFinalPath.addFirst(currNode.node);             
-
+          actualFinalPath.addFirst(currNode.node);               
           currNode = currNode.visitedThrough;
 
         }
         System.out.println(actualFinalPath);
         System.out.println(finalPath);
         pathHome = finalPath;
-        goingHome = true;
 
         return;
       }
@@ -1479,11 +1477,8 @@ class Tank extends Sprite {
 
   // 
   void takePath() {
-    //if (pathHome.isEmpty() && okayToGoNextStepHome) {
-    //  moveTo(startNode.x-1, startNode.y-1);
-    //  goingHome = false;
-    //} else 
-    if (okayToGoNextStepHome) {
+
+    if (okayToGoNextStepHome && !pathHome.isEmpty()) {
       Node next = pathHome.poll();
       okayToGoNextStepHome = false;
 
@@ -1502,8 +1497,10 @@ class Tank extends Sprite {
           x = 1;
         } 
         
-        moveTo(next.x+1, next.y+y);
-        goingHome = false;
+        float a = next.x+x;
+        float b = next.y+y;
+        println("final MOVE: " + a +", "+ b );
+        moveTo(next.x+x, next.y+y);
       } else {
           moveTo(next.x, next.y);
       }
@@ -1571,50 +1568,81 @@ class Tank extends Sprite {
     }
   }
 
-  //TODO: ta bort metod! Används endast för att testa A*
-  /*
-  void testAStarAlgorithmByAddingPatrolledNodes() {
-    //SHORTEST
-    //patrolled.put(grid.nodes[2][6], 0);
-    patrolled.put(grid.nodes[2][7], 0);
-    patrolled.put(grid.nodes[2][8], 0); // but should skip this one
-    patrolled.put(grid.nodes[3][8], 0);
-    patrolled.put(grid.nodes[4][8], 0);
-    patrolled.put(grid.nodes[5][9], 0);
-    patrolled.put(grid.nodes[6][10], 0);
+//  //TODO: ta bort metod! Används endast för att testa A*
+//  void testAStarAlgorithmByAddingPatrolledNodes() {
+//    //SHORTEST
+//    //patrolled.put(grid.nodes[2][6], 0);
+//    patrolled.put(grid.nodes[2][7], 0);
+//    patrolled.put(grid.nodes[2][8], 0); // but should skip this one
+//    patrolled.put(grid.nodes[3][8], 0);
+//    patrolled.put(grid.nodes[4][8], 0);
+//    patrolled.put(grid.nodes[5][9], 0);
+//    patrolled.put(grid.nodes[6][10], 0);
 
 
-    //Longer path
-    patrolled.put(grid.nodes[6][9], 0);
-    patrolled.put(grid.nodes[6][8], 0);
-    patrolled.put(grid.nodes[6][7], 0);
-    patrolled.put(grid.nodes[6][6], 0);
-    //patrolled.put(grid.nodes[5][6], 0);
-    patrolled.put(grid.nodes[4][6], 0);
-    patrolled.put(grid.nodes[3][6], 0);
+//    //Longer path
+//    patrolled.put(grid.nodes[6][9], 0);
+//    patrolled.put(grid.nodes[6][8], 0);
+//    patrolled.put(grid.nodes[6][7], 0);
+//    patrolled.put(grid.nodes[6][6], 0);
+//    //patrolled.put(grid.nodes[5][6], 0);
+//    patrolled.put(grid.nodes[4][6], 0);
+//    patrolled.put(grid.nodes[3][6], 0);
     
     
-    patrolled.put(grid.nodes[6][11], 0);
-    patrolled.put(grid.nodes[6][12], 0);
-    patrolled.put(grid.nodes[6][13], 0);
-    patrolled.put(grid.nodes[6][14], 0);
-    patrolled.put(grid.nodes[5][14], 0);
-    patrolled.put(grid.nodes[4][14], 0);
-    patrolled.put(grid.nodes[3][14], 0);
-    patrolled.put(grid.nodes[2][14], 0);
-    patrolled.put(grid.nodes[1][14], 0);
-    patrolled.put(grid.nodes[0][13], 0);
-    patrolled.put(grid.nodes[0][12], 0);
-    patrolled.put(grid.nodes[0][11], 0);
-    patrolled.put(grid.nodes[0][10], 0);
-    patrolled.put(grid.nodes[0][9], 0);
-    patrolled.put(grid.nodes[0][8], 0);
-    patrolled.put(grid.nodes[0][7], 0);
-    patrolled.put(grid.nodes[0][6], 0);
-    patrolled.put(grid.nodes[0][5], 0);
-    patrolled.put(grid.nodes[0][4], 0);
-    }*/
-   }
+//    patrolled.put(grid.nodes[6][11], 0);
+//    patrolled.put(grid.nodes[6][12], 0);
+//    patrolled.put(grid.nodes[6][13], 0);
+//    patrolled.put(grid.nodes[6][14], 0);
+//    patrolled.put(grid.nodes[5][14], 0);
+//    patrolled.put(grid.nodes[4][14], 0);
+//    patrolled.put(grid.nodes[3][14], 0);
+//    patrolled.put(grid.nodes[2][14], 0);
+//    patrolled.put(grid.nodes[1][14], 0);
+//    patrolled.put(grid.nodes[0][13], 0);
+//    patrolled.put(grid.nodes[0][12], 0);
+//    patrolled.put(grid.nodes[0][11], 0);
+//    patrolled.put(grid.nodes[0][10], 0);
+//    patrolled.put(grid.nodes[0][9], 0);
+//    patrolled.put(grid.nodes[0][8], 0);
+//    patrolled.put(grid.nodes[0][7], 0);
+//    patrolled.put(grid.nodes[0][6], 0);
+//    patrolled.put(grid.nodes[0][5], 0);
+//    patrolled.put(grid.nodes[0][4], 0);
+//}
+
+
+  // Got from https://forum.processing.org/one/topic/timer-in-processing.html. The class is used to make sure the tank stays still for three seconds after reporting to its homebase 
+  class StopWatchTimer {
+  int startTime = 0, stopTime = 0;
+  boolean running = false;  
+  
+   
+    void start() {
+        startTime = millis();
+        running = true;
+    }
+    void stop() {
+        stopTime = millis();
+        running = false;
+    }
+    int getElapsedTime() {
+        int elapsed;
+        if (running) {
+             elapsed = (millis() - startTime);
+        }
+        else {
+            elapsed = (stopTime - startTime);
+        }
+        return elapsed;
+    }
+    int seconds() {
+      return (getElapsedTime() / 1000) % 60;
+    }
+  }
+
+
+}
 
 
   private enum Direction {
