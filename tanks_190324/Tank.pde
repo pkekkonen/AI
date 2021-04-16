@@ -38,6 +38,7 @@ class Tank extends Sprite {
   boolean turningBack; // Behöver tanksen backa pga collision eller att det är dags att backtracka? This is the boolean for you
   ArrayList<Node> badSpace = new ArrayList<Node>(); // har en nod fått din tanks att backa? Mark it with this
   int counter; //Hur pass mycket noden behöver backa
+  private ArrayList<Node> enemyNodes = new ArrayList<Node>(); //lista av noder i fiendebas
 
   Node startNode; // noden där tanken befinner sig.
 
@@ -48,6 +49,7 @@ class Tank extends Sprite {
 
   PVector[] otherTanks  = new PVector[5];
   PVector distance3_sensor;
+  boolean tankAhead; //Används för att kontrollera ifall det är en tank ahead. 
 
   ArrayList listOfActions; // Används ännu inte.
 
@@ -122,7 +124,8 @@ class Tank extends Sprite {
     visited.add(startNode); //Lägger till startpositionen till listan av noder som traversats
     startNode.setVisited(true); // sätter startnodens variable visited till true
     this.lastVisited = grid.getNearestNode(this.startpos); //Lägger till startpositionen som senast traverserade nod
-    this.counter = 1; //sätter counter till ett, då listan börjar med att backa ett steg. 
+    this.counter = 1; //sätter counter till ett, då listan börjar med att backa ett steg.
+    this.tankAhead = false; //Startar inte med en tank framför oss vad vi vet
 
     if (this.team.getId() == 0) this.heading = radians(0); // "0" radians.
     if (this.team.getId() == 1) this.heading = radians(180); // "3.14" radians.
@@ -183,6 +186,15 @@ class Tank extends Sprite {
 
 
     initializeSensors();
+    
+    Node[][] nodes = grid.getAllNodes();
+    for (int i = 0; i < nodes.length; i++) {
+      for (int j = 0; j < nodes[i].length; j++) {
+        if (nodes[i][j].x > width-150 && nodes[i][j].x < width && nodes[i][j].y > height-300 && nodes[i][j].y < height) {
+          enemyNodes.add(nodes[i][j]);
+        }
+      }
+    }
   }
 
 
@@ -882,6 +894,9 @@ class Tank extends Sprite {
     turningBack = false; //klar med att backa
     this.isMoving = false;  
     isMovingOnPatroll = false;
+    okayToGoNextStepHome = true; //TODO: kolla om det här behövs på andra arrived()
+    if(isAtHomebase)
+        goingHome = false;
     stopMoving_state();
   }
   
@@ -899,6 +914,9 @@ class Tank extends Sprite {
     isColliding = false;
     this.isMoving = false;  
     isMovingOnPatroll = false;
+    okayToGoNextStepHome = true; //TODO: kolla om det här behövs på andra arrived()
+    if(isAtHomebase)
+        goingHome = false;
     stopMoving_state();
   }
 
@@ -943,12 +961,12 @@ class Tank extends Sprite {
           if (goingHome) {
             takePath();
           }
-          
+          /*
           //TODO: ta bort if-sats! Används endast för att testa A*
           if (!isAtHomebase && !goingHome) {
             System.out.println("GO HOME");
             findShortestPathHome();
-          }
+          }*/
           
           // Om tanken är i rörelse.
           if (this.isMoving) {
@@ -1147,6 +1165,8 @@ class Tank extends Sprite {
         if (distanceVectMag <= minDistance) {
           println("! Tank["+ this.getId() + "] – FAST I EN ANNAN TANK");
         }
+        
+        checkTankForward(other);
 
         isColliding = true; //Lagt till att tanksen håller på att krocka
         badSpace.add(grid.getNearestNode(targetPosition)); //lägger till noden i listan över platser tanksen krockat på
@@ -1289,6 +1309,20 @@ class Tank extends Sprite {
     }
   }
 
+//*******************************************
+//Kontrollerar ifall det är en fiendetank framför
+  void checkTankForward(Tank other) {
+    if (!enemyNodes.contains(grid.getNearestNode(position))) {
+      return;
+    }
+    PVector viewForward = PVector.add(position, new PVector((float)Math.cos(heading), (float)Math.sin(heading)).mult(this.diameter*2)); 
+    PVector distanceVect = PVector.sub(other.position, viewForward); 
+    float distanceVectMag = distanceVect.mag(); 
+    float minDistance = this.radius + other.radius; 
+    if (distanceVectMag <= minDistance) {
+      tankAhead = true; 
+    }
+  }
   //*****************************************
   // keepPatrolling() är den funktion som bestämmer vilken node tanksen ska till härnäst
   void keepPatrolling() {
@@ -1304,6 +1338,8 @@ class Tank extends Sprite {
       turningBack = true;
       moveTo(back.position);
       println("last visited  " +lastVisited.col + " and " + lastVisited.row);
+    }else if (tankAhead) {
+      findShortestPathHome();
     } else { // om grannlistan inte är tom, ska en random väljas ut och åkas till. 
       Node target = grid.getRandomNodeWithin(neighbours);
       println("target  " +target.col + " and " + target.row);

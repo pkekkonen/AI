@@ -188,6 +188,11 @@ class Grid {
   }
 
   //***************************************************  
+  Node[][] getAllNodes(){
+   return nodes; 
+  }
+  
+  //***************************************************  
   //Ger åter en lista av de åtta närmsta noderna runt en nod (om inte vid en vägg)
   ArrayList<Node> getNodesNeighbours(Node n) {
     ArrayList<Node> neighbours = new ArrayList<Node>();  
