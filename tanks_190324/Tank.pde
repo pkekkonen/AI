@@ -1,4 +1,4 @@
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -100,7 +100,8 @@ class Tank extends Sprite {
   private ArrayList<Node> homeNodes = new ArrayList<Node>();
   private ArrayList<Node> enemyNodes = new ArrayList<Node>();
   private Node lastVisitedNode;
-
+  private Node lastSeenEnemy;
+  
   // Used to make sure tank stays still for three seconds after reporting to homebase
   StopWatchTimer timer;
 
@@ -1026,6 +1027,11 @@ class Tank extends Sprite {
           timer.start();
           isReporting = false;
           isReportingInHomebase = true;
+          patrolled.put(lastSeenEnemy, Integer.MAX_VALUE);
+          for(Node n : getNeighboringNodes(lastSeenEnemy)){
+            patrolled.put(n, Integer.MAX_VALUE);
+          }
+          showGrid();
         }
         message_arrivedAtHomebase();
       }
