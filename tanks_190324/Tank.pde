@@ -1410,6 +1410,7 @@ class Tank extends Sprite {
         System.out.println(actualFinalPath);
         System.out.println(finalPath);
         pathHome = finalPath;
+        goingHome = true;
 
         return;
       }
@@ -1497,6 +1498,7 @@ class Tank extends Sprite {
           x = 1;
         } 
         
+        goingHome = false;
         float a = next.x+x;
         float b = next.y+y;
         println("final MOVE: " + a +", "+ b );
