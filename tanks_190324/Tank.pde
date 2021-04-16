@@ -1411,6 +1411,7 @@ class Tank extends Sprite {
         System.out.println(finalPath);
         pathHome = finalPath;
         goingHome = true;
+        tankAhead = false;
 
         return;
       }
