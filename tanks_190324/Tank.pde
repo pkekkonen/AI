@@ -97,9 +97,6 @@ class Tank extends Sprite {
 
   protected ArrayList<Sensor> mySensors = new ArrayList<Sensor>();
 
-  // List of traversed areas
-  private HashMap<Node, Integer> patrolled = new HashMap<Node, Integer>();
-
   //Shortest path home 
   private LinkedList<Node> pathHome = new LinkedList<Node>();
   
@@ -1424,7 +1421,7 @@ class Tank extends Sprite {
       List<Node> children = grid.getNodesNeighbours(current.node);
 
       for (Node n : children) {
-        if (patrolled.containsKey(n)) {
+        if (visited.contains(n)) {
           double gValue = calculateGValue(current, n);
           double hValue = calculateHeuristics(n);
           double fValue = gValue+hValue;
