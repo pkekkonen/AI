@@ -122,6 +122,8 @@ class Tank extends Sprite {
 
     this.startNode = grid.getNearestNode(this.startpos);
     visited.add(startNode); //Lägger till startpositionen till listan av noder som traversats
+    println("visited "+visited);
+    println("Startnode "+startNode.col +" " + startNode.row);
     startNode.setVisited(true); // sätter startnodens variable visited till true
     this.lastVisited = grid.getNearestNode(this.startpos); //Lägger till startpositionen som senast traverserade nod
     this.counter = 1; //sätter counter till ett, då listan börjar med att backa ett steg.
@@ -1175,7 +1177,9 @@ class Tank extends Sprite {
       // Meddela tanken om att kollision med den andra tanken gjorts.
       message_collision(other);
     }
-      checkTankForward(other);
+    if (other.id == 0 && !tankAhead &&
+    (this.id == 3 || this.id == 4 || this.id == 5)) 
+      checkTankForward(this, other);
   }
 
   void setNode() {
@@ -1305,23 +1309,19 @@ class Tank extends Sprite {
 
 //*******************************************
 //Kontrollerar ifall det är en fiendetank framför
-  void checkTankForward(Tank other) {
-    if (!enemyNodes.contains(startNode)) {
+  void checkTankForward(Tank other, Tank me) {
+    if (!enemyNodes.contains(me.startNode)) {
       return;
     }
-    println("Sees a tank");
-    println("visited "+visited);
-    println("Startnode "+startNode.col +" " + startNode.row);
-    println(enemyNodes);
-    pause = true;
-    PVector viewForward = PVector.add(position, new PVector((float)Math.cos(heading), (float)Math.sin(heading)).mult(this.diameter*2));
+    PVector viewForward = PVector.add(me.position, new PVector((float)Math.cos(me.heading), (float)Math.sin(me.heading)));
     
     PVector distanceVect = PVector.sub(other.position, viewForward); 
     float distanceVectMag = distanceVect.mag(); 
     float minDistance = this.radius + other.radius; 
     if (distanceVectMag <= minDistance) {
-      println(tankAhead);
-      tankAhead = true; 
+      me.tankAhead = true; 
+      println("visited "+me.visited);
+      pause = true;
     }
     
     
@@ -1335,7 +1335,7 @@ class Tank extends Sprite {
 
     ArrayList<Node> neighbours_temp = grid.getNodesNeighbours(startNode); //de åtta närliggande noderna
     ArrayList<Node> neighbours = removeVisited(neighbours_temp); // de som är kvar efter noderna som a) redan är besökta och b) är inskrivna som krock-noder
-    if (neighbours.isEmpty() || isColliding) { // om listan är tom eller tanksen just krockat ska tanksen backtracka till den senaste noden den var vid. 
+    if ((neighbours.isEmpty() || isColliding) && !tankAhead) { // om listan är tom eller tanksen just krockat ska tanksen backtracka till den senaste noden den var vid. 
       Node back = new Node(lastVisited.col, lastVisited.row, lastVisited.x, lastVisited.y);
       println("back  " +back.col + " and " + back.row);
       turningBack = true;
