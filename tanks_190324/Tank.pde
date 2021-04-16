@@ -1310,7 +1310,6 @@ class Tank extends Sprite {
     float distanceVectMag = distanceVect.mag(); 
     float minDistance = this.radius + other.radius; 
     if (distanceVectMag <= minDistance) {
-      println("visited: " + visited);
       me.tankAhead = true; 
     }
   }
@@ -1325,7 +1324,6 @@ class Tank extends Sprite {
       Node back = new Node(lastVisited.col, lastVisited.row, lastVisited.x, lastVisited.y);
       turningBack = true;
       moveTo(back.position);
-      println("visited: " + visited);
     }else if (tankAhead) {
       findShortestPathHome();
     } else { // om grannlistan inte är tom, ska en random väljas ut och åkas till. 
