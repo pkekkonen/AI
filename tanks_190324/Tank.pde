@@ -1,4 +1,4 @@
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -1370,7 +1370,7 @@ class Tank extends Sprite {
       }
       if (!patrolled.containsKey(temp)) {
         if ((temp.position.y+r >= height) || (temp.position.y-r <= 0) ||
-          (temp.position.x+r >= width) || (temp.position.x-r <= 0) || temp.content instanceof Tree) { 
+          (temp.position.x+r >= width) || (temp.position.x-r <= 0) ) { 
           patrolled.put(temp, Integer.MAX_VALUE);
         } else {
           patrolled.put(n, 1);
@@ -1515,7 +1515,7 @@ class Tank extends Sprite {
       List<Node> children = grid.getNodesNeighbours(current.node);
 
       for (Node n : children) {
-        if (patrolled.containsKey(n)) {
+        if (patrolled.containsKey(n) && !(n.content instanceof Tree)) {
           double gValue = calculateGValue(current, n);
           double hValue = calculateHeuristics(n);
           double fValue = gValue+hValue;
