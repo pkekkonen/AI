@@ -1,6 +1,6 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **/ //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **/ //<>// //<>//
 
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue; //<>//
 import java.util.List;
@@ -1298,8 +1298,6 @@ class Tank extends Sprite {
 
     findShortestPathHome();
   }
-
-  PVector vectorTarget; //Nästa mål i vektorformat
   
   //Denna metod påbörjar patrulleringen
   void startPatrolling() {
