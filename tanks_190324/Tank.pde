@@ -1458,7 +1458,8 @@ class Tank extends Sprite {
 
   //*****************************
 
-  // Implementation of A* for finding the shortest path home 
+  // Implementation of A* for finding the shortest path home
+  // Inspired by pseudocode found at https://mat.uab.cat/~alseda/MasterOpt/AStar-Algorithm.pdf
   void findShortestPathHome() {
     Queue<AStarNode> openQueue = new PriorityQueue<AStarNode>(new HeuristicsComparator());
     LinkedList<AStarNode> closedList = new LinkedList<AStarNode>(); 
