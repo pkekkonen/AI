@@ -119,8 +119,6 @@ class Tank extends Sprite {
 
     this.startNode = grid.getNearestNode(this.startpos);
     visited.add(startNode); //Lägger till startpositionen till listan av noder som traversats
-    println("visited "+visited);
-    println("Startnode "+startNode.col +" " + startNode.row);
     startNode.setVisited(true); // sätter startnodens variable visited till true
     this.lastVisited = grid.getNearestNode(this.startpos); //Lägger till startpositionen som senast traverserade nod
     this.counter = 1; //sätter counter till ett, då listan börjar med att backa ett steg.
@@ -873,7 +871,7 @@ class Tank extends Sprite {
     //dens syfte är att kontrollera hur långt bak tanksen ska backa och det ställs till utgångsvärdet då tanksen inte behöver backa, utan kan gå normalt
     this.isMoving = false;
     isMovingOnPatroll = false;
-	okayToGoNextStepHome = true; //TODO: kolla om det här behövs på andra arrived()
+	okayToGoNextStepHome = true; 
     if(isAtHomebase)
         goingHome = false;
     stopMoving_state();
@@ -882,6 +880,7 @@ class Tank extends Sprite {
   //**************************************************
   // arrivedBack() gör saker lite annorlunda än arrived()
   //Den startar backtrackandet om tanksen finner sig i en situation där alla neighbouring noder redan är undersökta.
+  //Det borde egentligen varit en metod arrived där en if-sats bestämt om huruvida de bara ska framåt, tillbaka eller åter från kollision
   void arrivedBack() {
     println("*** Tank["+ this.getId() + "].arrivedBack()");
     lastVisited = visited.get(visited.size()-counter); //Sätter lastVisited till senaste noden innan den fastnade
@@ -955,12 +954,6 @@ class Tank extends Sprite {
           if (goingHome) {
             takePath();
           }
-          /*
-          //TODO: ta bort if-sats! Används endast för att testa A*
-          if (!isAtHomebase && !goingHome) {
-            System.out.println("GO HOME");
-            findShortestPathHome();
-          }*/
           
           // Om tanken är i rörelse.
           if (this.isMoving) {
@@ -1318,35 +1311,24 @@ class Tank extends Sprite {
     float minDistance = this.radius + other.radius; 
     if (distanceVectMag <= minDistance) {
       me.tankAhead = true; 
-      println("visited "+me.visited);
-      pause = true;
     }
-    
-    
   }
   //*****************************************
   // keepPatrolling() är den funktion som bestämmer vilken node tanksen ska till härnäst
   void keepPatrolling() {
     isMovingOnPatroll = true;
 
-    //println("visited: "+visited);
-
     ArrayList<Node> neighbours_temp = grid.getNodesNeighbours(startNode); //de åtta närliggande noderna
     ArrayList<Node> neighbours = removeVisited(neighbours_temp); // de som är kvar efter noderna som a) redan är besökta och b) är inskrivna som krock-noder
     if ((neighbours.isEmpty() || isColliding) && !tankAhead) { // om listan är tom eller tanksen just krockat ska tanksen backtracka till den senaste noden den var vid. 
       Node back = new Node(lastVisited.col, lastVisited.row, lastVisited.x, lastVisited.y);
-      println("back  " +back.col + " and " + back.row);
       turningBack = true;
       moveTo(back.position);
-      println("last visited  " +lastVisited.col + " and " + lastVisited.row);
     }else if (tankAhead) {
       findShortestPathHome();
     } else { // om grannlistan inte är tom, ska en random väljas ut och åkas till. 
       Node target = grid.getRandomNodeWithin(neighbours);
-      println("target  " +target.col + " and " + target.row);
       moveTo(target.position);
-      println("last visited  " +lastVisited.col + " and " + lastVisited.row);
-      //}
     }
   }
 
@@ -1360,7 +1342,6 @@ class Tank extends Sprite {
     for (Node n : list) {
       if (n.getVisited() == false && !(badSpace.contains(n))) {
         removed.add(n);
-        println("removed: " + n.col + "  " + n.row);
       }
     }
     return removed;
@@ -1368,16 +1349,13 @@ class Tank extends Sprite {
 
   //*****************************
 
-  //TODO: make better implementation
   Direction lastDir;
 
   // using A* f(n) = g(n) + h(n)
   void findShortestPathHome() {
-    println("Find shortest path home");
     Queue<AStarNode> openQueue = new PriorityQueue<AStarNode>(new HeuristicsComparator());
     LinkedList<AStarNode> closedList = new LinkedList<AStarNode>(); 
     openQueue.add(new AStarNode(this.startNode, calculateHeuristics(this.startNode), 0, null)); //adding start node
-    println("FINDING SHORTESt: curr " + this.startNode);
     AStarNode current;
     
     while (!openQueue.isEmpty()) {
@@ -1408,8 +1386,6 @@ class Tank extends Sprite {
           currNode = currNode.visitedThrough;
 
         }
-        System.out.println(actualFinalPath);
-        System.out.println(finalPath);
         pathHome = finalPath;
         goingHome = true;
         tankAhead = false;
@@ -1486,7 +1462,6 @@ class Tank extends Sprite {
       okayToGoNextStepHome = false;
 
       if (pathHome.isEmpty()) {
-        //TODO: make better implementation
         int x = 0, y = 0;
         if(lastDir == Direction.NORTH || lastDir == Direction.NORTHWEST || lastDir == Direction.NORTHEAST) {
           y = 1;
@@ -1503,7 +1478,6 @@ class Tank extends Sprite {
         goingHome = false;
         float a = next.x+x;
         float b = next.y+y;
-        println("final MOVE: " + a +", "+ b );
         moveTo(next.x+x, next.y+y);
       } else {
           moveTo(next.x, next.y);
@@ -1571,50 +1545,6 @@ class Tank extends Sprite {
       return n1.fValue > n2.fValue ? 1 : -1;
     }
   }
-
-//  //TODO: ta bort metod! Används endast för att testa A*
-//  void testAStarAlgorithmByAddingPatrolledNodes() {
-//    //SHORTEST
-//    //patrolled.put(grid.nodes[2][6], 0);
-//    patrolled.put(grid.nodes[2][7], 0);
-//    patrolled.put(grid.nodes[2][8], 0); // but should skip this one
-//    patrolled.put(grid.nodes[3][8], 0);
-//    patrolled.put(grid.nodes[4][8], 0);
-//    patrolled.put(grid.nodes[5][9], 0);
-//    patrolled.put(grid.nodes[6][10], 0);
-
-
-//    //Longer path
-//    patrolled.put(grid.nodes[6][9], 0);
-//    patrolled.put(grid.nodes[6][8], 0);
-//    patrolled.put(grid.nodes[6][7], 0);
-//    patrolled.put(grid.nodes[6][6], 0);
-//    //patrolled.put(grid.nodes[5][6], 0);
-//    patrolled.put(grid.nodes[4][6], 0);
-//    patrolled.put(grid.nodes[3][6], 0);
-    
-    
-//    patrolled.put(grid.nodes[6][11], 0);
-//    patrolled.put(grid.nodes[6][12], 0);
-//    patrolled.put(grid.nodes[6][13], 0);
-//    patrolled.put(grid.nodes[6][14], 0);
-//    patrolled.put(grid.nodes[5][14], 0);
-//    patrolled.put(grid.nodes[4][14], 0);
-//    patrolled.put(grid.nodes[3][14], 0);
-//    patrolled.put(grid.nodes[2][14], 0);
-//    patrolled.put(grid.nodes[1][14], 0);
-//    patrolled.put(grid.nodes[0][13], 0);
-//    patrolled.put(grid.nodes[0][12], 0);
-//    patrolled.put(grid.nodes[0][11], 0);
-//    patrolled.put(grid.nodes[0][10], 0);
-//    patrolled.put(grid.nodes[0][9], 0);
-//    patrolled.put(grid.nodes[0][8], 0);
-//    patrolled.put(grid.nodes[0][7], 0);
-//    patrolled.put(grid.nodes[0][6], 0);
-//    patrolled.put(grid.nodes[0][5], 0);
-//    patrolled.put(grid.nodes[0][4], 0);
-//}
-
 
   // Got from https://forum.processing.org/one/topic/timer-in-processing.html. The class is used to make sure the tank stays still for three seconds after reporting to its homebase 
   class StopWatchTimer {
