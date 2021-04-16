@@ -58,6 +58,8 @@ class Node {
     return this.content;
   }
   
+  
+  //Overridat equals och hashcode för att kunna använda som nyckel i HashMaps
   @Override
   public boolean equals(Object o) {
   
