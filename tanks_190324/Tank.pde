@@ -1,3 +1,5 @@
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **/ //<>//
+
 import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -101,6 +103,8 @@ class Tank extends Sprite {
   private ArrayList<Node> enemyNodes = new ArrayList<Node>();
   private Node lastVisitedNode;
   private Node lastSeenEnemy;
+  PVector vectorTarget; // Used for patrolling
+  Direction lastDir; // Used for reporting
   
   // Used to make sure tank stays still for three seconds after reporting to homebase
   StopWatchTimer timer;
@@ -899,9 +903,8 @@ class Tank extends Sprite {
         // Om tanken är redo för handling och kan agera.
         if (!this.isImmobilized && this.isReady) {  
 
-          //TODO: ta bort if-sats! Används endast för att testa A*
-          if (isReporting) {
-            takePath();
+          if (isReporting && okayToGoNextStepHome) {
+            takeOneMoreStepHome();
           } else if (isReportingInHomebase) {
             // If we are done with reporting, go back to patrolling.
 
@@ -1292,12 +1295,9 @@ class Tank extends Sprite {
   void report() {
     isReporting = true;
     tankAhead = false;
-    System.out.println("I should go.");
-
+    System.out.println("Enemy seen. Time to report.");
     findShortestPathHome();
   }
-
-  PVector vectorTarget;
 
   void startPatrolling() {
     patrolling = true;
@@ -1309,8 +1309,6 @@ class Tank extends Sprite {
     patrolling = true;
     //getView();
     Node target = getNextTarget();
-    System.out.println("pATROLLING TO " + target);
-    System.out.println("current " + currentNode);
 
     vectorTarget = new PVector(target.x, target.y);
     moveTo(vectorTarget);
@@ -1343,13 +1341,8 @@ class Tank extends Sprite {
         lastVisitedNode = currentNode;
         currentNode = grid.getNearestNode(position);
         patrolled.put(currentNode, -1);
-        System.out.print("Neighbors: ");
-        for (Node n : getNeighboringNodes(currentNode)) {
-          System.out.print(n.x + " " + n.y + " | ");
-        }
-        System.out.println();
+
         assignCostValue(new ArrayList<Node>(), currentNode);
-        System.out.println();
         //getView();
         target = getNextTarget();
 
@@ -1465,32 +1458,30 @@ class Tank extends Sprite {
 
   //*****************************
 
-  //TODO: make better implementation
-  Direction lastDir;
-
-  // using A* f(n) = g(n) + h(n)
+  // Implementation of A* for finding the shortest path home 
   void findShortestPathHome() {
     Queue<AStarNode> openQueue = new PriorityQueue<AStarNode>(new HeuristicsComparator());
     LinkedList<AStarNode> closedList = new LinkedList<AStarNode>(); 
     openQueue.add(new AStarNode(currentNode, calculateHeuristics(currentNode), 0, null)); //adding start node
-    println("FINDING SHORTESt: curr " + currentNode);
     AStarNode current;
 
     while (!openQueue.isEmpty()) {
       current = openQueue.poll();
       closedList.add(current);
 
-
       if (isNodeInHomeBase(current.node)) {
 
         //WE ARE DONE
-        LinkedList<Node> finalPath = new LinkedList<Node>();
-        LinkedList<Node> actualFinalPath = new LinkedList<Node>();
+        LinkedList<Node> finalPath = new LinkedList<Node>(); // the nodes which we actually move between
+        LinkedList<Node> actualFinalPath = new LinkedList<Node>(); // the nodes that makes up the whole path home
         AStarNode currNode = closedList.getLast();
-        lastDir = getDirection(currNode.node, currNode.visitedThrough.node);
-
+        
+        //We use the direction to check if the tank can go straigth to a further node without stopping on nodes between
         Direction dir = null;
         Direction prevDir = null;
+        
+        // The lastDir variable is used to make sure that we get into the homebase
+        lastDir = getDirection(currNode.node, currNode.visitedThrough.node);
 
         while (currNode != null) {
           prevDir = dir;
@@ -1503,8 +1494,7 @@ class Tank extends Sprite {
           actualFinalPath.addFirst(currNode.node);               
           currNode = currNode.visitedThrough;
         }
-        System.out.println(actualFinalPath);
-        System.out.println(finalPath);
+        System.out.println("Path home: " + actualFinalPath);
         pathHome = finalPath;
 
         return;
@@ -1540,6 +1530,7 @@ class Tank extends Sprite {
     }
   }
 
+  // Used to optimize the time it takes to travel the shortest path home
   Direction getDirection(Node a, Node b) {
     if (a.x == b.x && a.y > b.y) {
       return Direction.NORTH;
@@ -1570,15 +1561,16 @@ class Tank extends Sprite {
     return null;
   }
 
-  // 
-  void takePath() {
+  // Moves to the next node in the pathHome list that we got from findShortestPathHome
+  void takeOneMoreStepHome() {
 
-    if (okayToGoNextStepHome && !pathHome.isEmpty()) {
+    if (!pathHome.isEmpty()) {
       Node next = pathHome.poll();
       okayToGoNextStepHome = false;
 
       if (pathHome.isEmpty()) {
-        //TODO: make better implementation
+        
+        //This fun part is used to check how much further we need to move in x and y direction to get into the homebase
         int x = 0, y = 0;
         if (lastDir == Direction.NORTH || lastDir == Direction.NORTHWEST || lastDir == Direction.NORTHEAST) {
           y = 50;
@@ -1594,7 +1586,6 @@ class Tank extends Sprite {
 
         float a = next.x+x;
         float b = next.y+y;
-        println("final MOVE: " + a +", "+ b );
         currentNode = next;
         moveTo(next.x+x, next.y+y);
       } else {
@@ -1603,7 +1594,7 @@ class Tank extends Sprite {
     }
   }  
 
-  // Check if node is within homebase
+  // Check if the Node current is within homebase
   boolean isNodeInHomeBase(Node current) {
     if (
       current.x > team.homebase_x && 
@@ -1616,7 +1607,7 @@ class Tank extends Sprite {
     }
   }
 
-  // real distance from start to current
+  // real distance from start to currentNode
   double calculateGValue(AStarNode a, Node b) {
     double prevDist = a.gValue;
     double newDist = Math.sqrt(Math.pow(a.node.x-b.x, 2)+Math.pow(a.node.y-b.y, 2));
@@ -1624,7 +1615,6 @@ class Tank extends Sprite {
   }
 
   double calculateHeuristics(Node n) {
-
     //If we think of the game plan as a coordinate system where the point (team.homebase_x+team.homebase_width, team.homebase_y+team.homebase_height) is origo,
     //then the following if-statements determines whether the Node n is in the first, third or fourth quadrant and calculates accordingly
     if (n.x <= team.homebase_x+team.homebase_width) { // n is in the third quadrant
@@ -1655,57 +1645,12 @@ class Tank extends Sprite {
     }
   }
 
-  //Static?
   class HeuristicsComparator implements Comparator<AStarNode> {
     @Override
       public int compare(AStarNode n1, AStarNode n2) {
       return n1.fValue > n2.fValue ? 1 : -1;
     }
   }
-
-  //  //TODO: ta bort metod! Används endast för att testa A*
-  //  void testAStarAlgorithmByAddingPatrolledNodes() {
-  //    //SHORTEST
-  //    //patrolled.put(grid.nodes[2][6], 0);
-  //    patrolled.put(grid.nodes[2][7], 0);
-  //    patrolled.put(grid.nodes[2][8], 0); // but should skip this one
-  //    patrolled.put(grid.nodes[3][8], 0);
-  //    patrolled.put(grid.nodes[4][8], 0);
-  //    patrolled.put(grid.nodes[5][9], 0);
-  //    patrolled.put(grid.nodes[6][10], 0);
-
-
-  //    //Longer path
-  //    patrolled.put(grid.nodes[6][9], 0);
-  //    patrolled.put(grid.nodes[6][8], 0);
-  //    patrolled.put(grid.nodes[6][7], 0);
-  //    patrolled.put(grid.nodes[6][6], 0);
-  //    //patrolled.put(grid.nodes[5][6], 0);
-  //    patrolled.put(grid.nodes[4][6], 0);
-  //    patrolled.put(grid.nodes[3][6], 0);
-
-
-  //    patrolled.put(grid.nodes[6][11], 0);
-  //    patrolled.put(grid.nodes[6][12], 0);
-  //    patrolled.put(grid.nodes[6][13], 0);
-  //    patrolled.put(grid.nodes[6][14], 0);
-  //    patrolled.put(grid.nodes[5][14], 0);
-  //    patrolled.put(grid.nodes[4][14], 0);
-  //    patrolled.put(grid.nodes[3][14], 0);
-  //    patrolled.put(grid.nodes[2][14], 0);
-  //    patrolled.put(grid.nodes[1][14], 0);
-  //    patrolled.put(grid.nodes[0][13], 0);
-  //    patrolled.put(grid.nodes[0][12], 0);
-  //    patrolled.put(grid.nodes[0][11], 0);
-  //    patrolled.put(grid.nodes[0][10], 0);
-  //    patrolled.put(grid.nodes[0][9], 0);
-  //    patrolled.put(grid.nodes[0][8], 0);
-  //    patrolled.put(grid.nodes[0][7], 0);
-  //    patrolled.put(grid.nodes[0][6], 0);
-  //    patrolled.put(grid.nodes[0][5], 0);
-  //    patrolled.put(grid.nodes[0][4], 0);
-  //}
-
 
   // Got from https://forum.processing.org/one/topic/timer-in-processing.html. The class is used to make sure the tank stays still for three seconds after reporting to its homebase 
   class StopWatchTimer {
