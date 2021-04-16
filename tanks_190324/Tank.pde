@@ -885,9 +885,7 @@ class Tank extends Sprite {
   //Den startar backtrackandet om tanksen finner sig i en situation där alla neighbouring noder redan är undersökta.
   void arrivedBack() {
     println("*** Tank["+ this.getId() + "].arrivedBack()");
-    println("visited before back"+visited + " and lastVisisted " + lastVisited.col + " " + lastVisited.row);
     lastVisited = visited.get(visited.size()-counter); //Sätter lastVisited till senaste noden innan den fastnade
-    println("visited before back"+visited + " and lastVisisted " + lastVisited.col + " " + lastVisited.row);
     startNode = grid.getNearestNode(this.position); //startNoden sätts i nuvarande position
     visited.add(startNode); // nuvarande position läggs till undersökt
     counter = counter + 2; // counter lägger till två för att komma förbi den nod som just lagts till och den tanksen just backat till. 
@@ -904,10 +902,7 @@ class Tank extends Sprite {
     // Denna funktion startas upp om tanksen kolliderat och nu ska tillbaka till sin tidigare plats (den nod den var på innan kollisionen)
   void arrivedBackFromCollision() {
     println("*** Tank["+ this.getId() + "].arrivedBackFromColliding()");
-    println("visited before back"+visited + " and lastVisisted " + lastVisited.col + " " + lastVisited.row);
     lastVisited = visited.get(visited.size()-1); // lastVisited sätts till senaste värdet i visited, dvs där den var innan den krockade
-    println();
-    println("visited before back"+visited + " and lastVisisted " + lastVisited.col + " " + lastVisited.row);
     startNode = grid.getNearestNode(this.position); //Startnod sätts till nuvarande position
     visited.add(startNode); // Startnode läggs på nytt till i visited. 
     turningBack = false;
@@ -1166,8 +1161,6 @@ class Tank extends Sprite {
           println("! Tank["+ this.getId() + "] – FAST I EN ANNAN TANK");
         }
         
-        checkTankForward(other);
-
         isColliding = true; //Lagt till att tanksen håller på att krocka
         badSpace.add(grid.getNearestNode(targetPosition)); //lägger till noden i listan över platser tanksen krockat på
         this.isMoving = false;  
@@ -1182,6 +1175,7 @@ class Tank extends Sprite {
       // Meddela tanken om att kollision med den andra tanken gjorts.
       message_collision(other);
     }
+      checkTankForward(other);
   }
 
   void setNode() {
@@ -1312,23 +1306,32 @@ class Tank extends Sprite {
 //*******************************************
 //Kontrollerar ifall det är en fiendetank framför
   void checkTankForward(Tank other) {
-    if (!enemyNodes.contains(grid.getNearestNode(position))) {
+    if (!enemyNodes.contains(startNode)) {
       return;
     }
-    PVector viewForward = PVector.add(position, new PVector((float)Math.cos(heading), (float)Math.sin(heading)).mult(this.diameter*2)); 
+    println("Sees a tank");
+    println("visited "+visited);
+    println("Startnode "+startNode.col +" " + startNode.row);
+    println(enemyNodes);
+    pause = true;
+    PVector viewForward = PVector.add(position, new PVector((float)Math.cos(heading), (float)Math.sin(heading)).mult(this.diameter*2));
+    
     PVector distanceVect = PVector.sub(other.position, viewForward); 
     float distanceVectMag = distanceVect.mag(); 
     float minDistance = this.radius + other.radius; 
     if (distanceVectMag <= minDistance) {
+      println(tankAhead);
       tankAhead = true; 
     }
+    
+    
   }
   //*****************************************
   // keepPatrolling() är den funktion som bestämmer vilken node tanksen ska till härnäst
   void keepPatrolling() {
     isMovingOnPatroll = true;
 
-    println("visited: "+visited);
+    //println("visited: "+visited);
 
     ArrayList<Node> neighbours_temp = grid.getNodesNeighbours(startNode); //de åtta närliggande noderna
     ArrayList<Node> neighbours = removeVisited(neighbours_temp); // de som är kvar efter noderna som a) redan är besökta och b) är inskrivna som krock-noder
@@ -1372,6 +1375,7 @@ class Tank extends Sprite {
 
   // using A* f(n) = g(n) + h(n)
   void findShortestPathHome() {
+    println("find shortest path home");
     Queue<AStarNode> openQueue = new PriorityQueue<AStarNode>(new HeuristicsComparator());
     LinkedList<AStarNode> closedList = new LinkedList<AStarNode>(); 
     openQueue.add(new AStarNode(this.startNode, calculateHeuristics(this.startNode), 0, null)); //adding start node
