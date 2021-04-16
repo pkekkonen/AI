@@ -1161,7 +1161,8 @@ class Tank extends Sprite {
         }
         
         isColliding = true; //Lagt till att tanksen håller på att krocka
-        badSpace.add(grid.getNearestNode(targetPosition)); //lägger till noden i listan över platser tanksen krockat på
+        //badSpace.add(grid.getNearestNode(targetPosition)); //lägger till noden i listan över platser tanksen krockat på, dåligt egentligen men om den inte är med i badspaces kan en nod försöka ta sig 
+        // dit igen och igen, vilket är bra för tanksen kan flytta på sig. 
         this.isMoving = false;  
         stopMoving_state();
       }
