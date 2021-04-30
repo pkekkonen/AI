@@ -133,6 +133,8 @@ void setup(){
 {
     public void run() {
        allTanks[0].startPatrolling();
+       allTanks[1].startPatrolling();
+       allTanks[2].startPatrolling();
     }
 }.start();
 }

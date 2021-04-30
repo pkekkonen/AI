@@ -116,7 +116,7 @@ class Team1 extends Team {
 
       if (!this.userControlled) {
         readSensorDistance();
-
+        
         //moveForward_state();
         if (this.idle_state) {
           //rotateTo()
@@ -292,6 +292,7 @@ class Team1 extends Team {
 
       if (!started) {
         started = true;
+        super.startPatrolling();
         //moveTo(grid.getRandomNodePosition()); 
         //moveForward_state();
 
