@@ -1637,21 +1637,26 @@ class Tank extends Sprite {
   }
 
   void flock(ArrayList<Tank> tanks) {
+    tanks.remove(this);
+
     PVector sep = separate(tanks);
     PVector ali = align(tanks);
     PVector coh = cohesion(tanks);
 
-    //sep.mult(1.0);
-    //ali.mult(1.0);
-    //coh.mult(1.0);
+    sep.mult(1.0);
+    ali.mult(1.0);
+    coh.mult(1.0);
 
     applyForce(sep);
-    //applyForce(ali);
-    //applyForce(coh);
+    applyForce(ali);
+    applyForce(coh);
   }
 
   PVector align(ArrayList<Tank> tanks) {
-    PVector sum = new PVector(0, 0);
+    if (tanks.size() == 0) {
+      return new PVector(0, 0);
+    }
+    PVector sum = new PVector();
     for (Tank other : tanks) {
       sum.add(other.velocity);
     }
@@ -1664,38 +1669,34 @@ class Tank extends Sprite {
 
 
   PVector separate(ArrayList<Tank> tanks) {
-    PVector sum = new PVector(0, 0);
-    int count = 0;
+    if (tanks.size() == 0) {
+      return new PVector(0, 0);
+    }
+    PVector sum = new PVector();
     for (Tank other : tanks) {
-      float d = PVector.dist(position, other.position);
-      PVector diff = PVector.sub(position, other.position);
-      diff.normalize();
-      diff.div(d);
-      sum.add(diff);
-      count++;
+      //float d = PVector.dist(position, other.position);
+      PVector diff = new PVector();
+      diff = PVector.sub(position, other.position);
+      if (diff.mag() > 0) {
+        diff.normalize();
+        diff.div(diff.mag());
+        sum.add(diff);
+      }
     }
-    if (count > 0) {
-      sum.div(count);
-      sum.normalize();
-      sum.mult(maxspeed);
-      PVector steer = PVector.sub(sum, velocity);
-      steer.limit(maxforce);
-      return steer;
-    }
-    return sum;
+
+    return sum.normalize();
   }
 
   PVector cohesion(ArrayList<Tank> tanks) {
-    PVector sum = new PVector(0, 0);
-    int count = 0;
+    if (tanks.size() == 0) {
+      return new PVector();
+    }
+    PVector sum = new PVector();
     for (Tank other : tanks) {
       sum.add(other.position);
-      count++;
     }
-    if (count > 0) {
-      sum.div(count);
-      return seekTank(sum);
-    }
+    sum.div(tanks.size());
+    sum.sub(position);
     return sum;
   }
 
