@@ -280,7 +280,7 @@ class Team2 extends Team {
     //--------------------
     // A method that calculates and applies a steering force towards a target
     // STEER = DESIRED MINUS VELOCITY
-    void seek(PVector target) {
+    void seek2(PVector target) {
       PVector desired = PVector.sub(target, position);  // A vector pointing from the position to the target
 
       // Normalize desired and scale to maximum speed
@@ -325,7 +325,7 @@ class Team2 extends Team {
       PVector circleOffSet = new PVector(wanderR*cos(wandertheta+h), wanderR*sin(wandertheta+h));
       PVector target = PVector.add(circlepos, circleOffSet);
 
-      seek(target);
+      seek2(target);
 
       // Render wandering circle, etc.
       if (debugOn) drawWanderStuff(position, circlepos, target, wanderR);

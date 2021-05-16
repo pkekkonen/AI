@@ -1643,7 +1643,7 @@ class Tank extends Sprite {
     PVector ali = align(tanks);
     PVector coh = cohesion(tanks);
 
-    sep.mult(1.0);
+    sep.mult(1.5);
     ali.mult(1.0);
     coh.mult(1.0);
 
@@ -1656,6 +1656,7 @@ class Tank extends Sprite {
     if (tanks.size() == 0) {
       return new PVector(0, 0);
     }
+
     PVector sum = new PVector();
     for (Tank other : tanks) {
       sum.add(other.velocity);
@@ -1672,35 +1673,48 @@ class Tank extends Sprite {
     if (tanks.size() == 0) {
       return new PVector(0, 0);
     }
-    PVector sum = new PVector();
+    float desiredseparation = 65.0f; // TODO: bra värde??
+    PVector steer = new PVector(0,0,0);
     for (Tank other : tanks) {
-      //float d = PVector.dist(position, other.position);
-      PVector diff = new PVector();
-      diff = PVector.sub(position, other.position);
-      if (diff.mag() > 0) {
+      float d = PVector.dist(position, other.position);
+
+      if (d < desiredseparation) {
+        PVector diff = PVector.sub(position,other.position);
         diff.normalize();
-        diff.div(diff.mag());
-        sum.add(diff);
+        diff.div(d);
+        steer.add(diff);
       }
     }
-
-    return sum.normalize();
+    if(tanks.size() > 0)
+      steer.div((float)tanks.size());
+      
+        // As long as the vector is greater than 0
+    if (steer.mag() > 0) {
+      // Implement Reynolds: Steering = Desired - Velocity
+      steer.normalize();
+      steer.mult(maxspeed);
+      steer.sub(velocity);
+      steer.limit(maxforce);
+    }
+    return steer;
   }
 
   PVector cohesion(ArrayList<Tank> tanks) {
     if (tanks.size() == 0) {
-      return new PVector();
+      return new PVector(0,0);
     }
-    PVector sum = new PVector();
+    PVector sum = new PVector(0,0);
     for (Tank other : tanks) {
       sum.add(other.position);
     }
     sum.div(tanks.size());
     sum.sub(position);
-    return sum;
+    return seek(sum);
   }
 
-  PVector seekTank(PVector target) {
+  // A method that calculates and applies a steering force towards a target
+  // STEER = DESIRED MINUS VELOCITY
+  PVector seek(PVector target) {
     PVector desired = PVector.sub(target, position);
     desired.normalize();
     desired.mult(maxspeed);
