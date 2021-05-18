@@ -1,6 +1,6 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **/ //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **/ //<>// //<>// //<>//
 
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue; //<>//
 import java.util.List;
@@ -1673,6 +1673,11 @@ class Tank extends Sprite {
     int seconds() {
       return (getElapsedTime() / 1000) % 60;
     }
+  }
+  
+  // Anropas från team ("hembasen") som radio
+  public void addPatrolledNodeFromOtherTank(Node n) {
+    patrolled.put(n, 0); 
   }
 }
 
