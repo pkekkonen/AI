@@ -1,7 +1,6 @@
- //<>//
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>//
- //<>//
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>//
+
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -566,7 +565,7 @@ class Tank extends Sprite {
 
   //**************************************************
   void moveTo(float x, float y) {
-    //println("*** Tank["+ this.getId() + "].moveTo(" +x +", "+ y+")");
+    println("*** Tank["+ this.getId() + "].moveTo(" +x +", "+ y+")");
 
     moveTo(new PVector(x, y));
   }
@@ -575,7 +574,7 @@ class Tank extends Sprite {
   void moveTo(PVector coord) {
     //println("*** Tank["+ this.getId() + "].moveTo(PVector)");
     if (!isImmobilized) {
-   //   println("*** Tank["+ this.getId() + "].moveTo(" +coord.x +", "+ coord.y+")");
+      println("*** Tank["+ this.getId() + "].moveTo(" +coord.x +", "+ coord.y+")");
 
 
       this.idle_state = false;
@@ -590,14 +589,14 @@ class Tank extends Sprite {
 
   //**************************************************
   void moveBy(float x, float y) {
-  //  println("*** Tank["+ this.getId() + "].moveBy(float x, float y)");
+    println("*** Tank["+ this.getId() + "].moveBy(float x, float y)");
 
     moveBy(new PVector(x, y));
   }
 
   //**************************************************
   void moveBy(PVector coord) {
-//    println("*** Tank["+ this.getId() + "].moveBy(PVector)");
+    println("*** Tank["+ this.getId() + "].moveBy(PVector)");
 
     PVector newCoord = PVector.add(this.position, coord);
     PVector nodevec = grid.getNearestNodePosition(newCoord);
@@ -926,6 +925,7 @@ class Tank extends Sprite {
           }
 
           if (patrolling) {
+            keepPatrolling();
           }
 
           // Om tanken är i rörelse.
@@ -1032,7 +1032,9 @@ class Tank extends Sprite {
           isReporting = false;
           isReportingInHomebase = true;
           patrolled.put(lastSeenEnemy, Integer.MAX_VALUE);
-
+          for (Node n : getNeighboringNodes(lastSeenEnemy)) {
+            patrolled.put(n, Integer.MAX_VALUE);
+          }
           showGrid();
         }
         message_arrivedAtHomebase();
@@ -1315,13 +1317,128 @@ class Tank extends Sprite {
     }
     .start();
     patrolling = true;
+    currentNode = grid.getNearestNode(position); //Hämtar noden som är närmast tankens nuvarande position
+    if (lastVisitedNode == null) {
+      lastVisitedNode = currentNode;
+    }
+    assignCostValue(new ArrayList<Node>(), currentNode);
+    patrolling = true;
+    Node target = getNextTarget();
+
+    vectorTarget = new PVector(target.x, target.y);
 
     moveTo(vectorTarget);
   }
+  void keepPatrolling() {
 
+    //Om det är en tank framför en så ska tanken återvända till senast besökta noden som en reträtt
+    if (tankAhead) {
+      if (collidedWithTank) {
+        vectorTarget = new PVector(lastVisitedNode.x, lastVisitedNode.y);
+        moveTo(vectorTarget);
+        collidedWithTank = false;
+      }
+      patrolling = false;
+      isReporting = true;
+      report();
+      return;      
 
+      //Om tanken kolliderat med ett träd så ska den gå tillbaka till senast besökta noden och ge noden som trädet sitter på ett värde som aldrig gör den mer värd än andra noder
+    } else if (collidedWithTree) {
+      currentNode = grid.getNearestNode(position);
+      patrolled.put(target, Integer.MAX_VALUE);
+      vectorTarget = new PVector(lastVisitedNode.x, lastVisitedNode.y);
+      collidedWithTree = false;
+      collidedWithTank = false;
+      moveTo(vectorTarget);
+      patrolled.put(currentNode, -1);
+      assignCostValue(new ArrayList<Node>(), currentNode);
+      startPatrolling();
+    }
 
+    //Om tanken är på en ny plats så ska den omdeklarera vad som är dens nuvarande nod och dess senaste nod
+    //Sätt nuvarande noden i listan över patrullerade noder, med värdet -1 för att signalera att den inte är uträknad
+    if (grid.getNearestNode(position) != currentNode) {
+      lastVisitedNode = currentNode;
+      currentNode = grid.getNearestNode(position);
+      patrolled.put(currentNode, -1);
+      assignCostValue(new ArrayList<Node>(), currentNode);
+      target = getNextTarget();
 
+      vectorTarget = new PVector(target.x, target.y);
+      moveTo(vectorTarget);
+    }
+  }
+
+  //Denna metod kollar en nods alla grannar, om nån av dem är opatrullerad får noden värdet 1, då den är 1 steg från ett mål
+
+  void assignCostValue(ArrayList<Node> finished, Node n) {
+    ArrayList<Node> neighbors = getNeighboringNodes(n);
+    float r = this.diameter/2;
+    for (Node temp : neighbors) {
+      if (finished.contains(temp)) {
+        continue;
+      }
+      if (!patrolled.containsKey(temp)) {
+        if ((temp.position.y+r >= height) || (temp.position.y-r <= 0) ||
+          (temp.position.x+r >= width) || (temp.position.x-r <= 0) ) { 
+          patrolled.put(temp, Integer.MAX_VALUE);
+        } else {
+          patrolled.put(n, 1);
+          backPropagate(n, 1);
+        }
+      } else {
+        if (!finished.contains(n)) {
+          finished.add(n);
+        }
+
+        assignCostValue(finished, temp);
+      }
+    }
+  } 
+
+  //Denna metod kollar alla grannar hos en nod och kollar om deras värde är dess värde är dess värde plus 1, eller lägre, och ändrar om inte.
+  void backPropagate(Node n, int i) {
+    for (Node temp : getNeighboringNodes(n)) {
+      if (patrolled.containsKey(temp) && (patrolled.get(temp) == -1 || (patrolled.get(temp) > i+1 && patrolled.get(temp) != Integer.MAX_VALUE))) {
+        patrolled.put(temp, i+1); 
+        backPropagate(temp, i+1);
+      }
+    }
+  }
+
+  //Returnerar alla närliggande noder till noden current
+  ArrayList<Node> getNeighboringNodes(Node current) {
+    ArrayList<Node> neighbors = new ArrayList<Node>(); 
+    for (int i = -1; i < 2; i++) {
+      for (int j = -1; j < 2; j++) {
+        if ((current.col + i >= 0) && (current.row + j >= 0) && !(i == 0 && j == 0) 
+          && (current.col + i <= 14) && (current.row + j <= 14)) { 
+          Node n = new Node(current.col + i, current.row + j, ((current.col + i)*grid.grid_size+grid.grid_size), ((current.row+j)*grid.grid_size+grid.grid_size)); 
+          neighbors.add(n);
+        }
+      }
+    }
+    return neighbors;
+  }
+
+  //Returnerar nästa mål baserat på vilken av noderna som har lägst värde, om noden ej är patrullerad så returneras den direkt
+  //Slumpfaktor är tillsatt för att testa att agenten agerar korrekt i olika rutter
+  Node getNextTarget() {
+    Node target = null; 
+    ArrayList<Node> neighbors = getNeighboringNodes(currentNode); 
+    Collections.shuffle(neighbors); 
+    for (Node temp : neighbors) {
+      if (!patrolled.containsKey(temp)) {
+        return temp;
+      }
+      if ((target == null || patrolled.get(temp) < patrolled.get(target)) && patrolled.get(temp) > -1) {
+        target = temp;
+      }
+    }
+    checkEnvironment(); 
+    return target;
+  }
   void showGrid() {
     for (int i = 0; i < grid.nodes.length; i++) {
       for (int j = 0; j < grid.nodes[i].length; j++) {
@@ -1527,18 +1644,10 @@ class Tank extends Sprite {
     PVector ali = align(flock);
     PVector coh = cohesion(flock);
     PVector hea = new PVector(cos(team.getHeading()), sin(team.getHeading()));
-    println(sep);
-    println(ali);
-    println(coh);
-
-    println(team.getHeading());
-    println(hea);
-    println();
-    
     sep.mult(1.5);
     ali.mult(1.0);
     coh.mult(1.0);
-    hea.mult(0.0003);
+    hea.mult(0.0001);
 
     applyForce(sep);
     applyForce(ali);
@@ -1548,7 +1657,7 @@ class Tank extends Sprite {
   }
 
   PVector align(ArrayList<Tank> tanks) {
-    float dist = 75;
+    float dist = 50;
 
     PVector sum = new PVector();
     int count = 0;
@@ -1571,7 +1680,7 @@ class Tank extends Sprite {
 
 
   PVector separate(ArrayList<Tank> tanks) {
-    float desiredseparation = 75.0f; // TODO: bra värde??
+    float desiredseparation = 65.0f; // TODO: bra värde??
     PVector steer = new PVector(0,0,0);
     int count = 0;
     for (Tank other : tanks) {
@@ -1680,11 +1789,6 @@ class Tank extends Sprite {
     int seconds() {
       return (getElapsedTime() / 1000) % 60;
     }
-  }
-  
-  // Anropas från team ("hembasen") som radio
-  public void addPatrolledNodeFromOtherTank(Node n) {
-    patrolled.put(n, 0); 
   }
 }
 
