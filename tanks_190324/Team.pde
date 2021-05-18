@@ -150,6 +150,16 @@ class Team {
   void setHeading() {
     heading = PVector.angleBetween(getAveragePosition().normalize(), target.position);
   }
+  
+  // Radio
+  // Todo: anropa från tank när den upptäcker ny node
+  public void broadcastTanksPosition(Node n, int tankId) {
+    for(Tank t: tanks) {
+      if(t.id != tankId) {
+        t.addPatrolledNodeFromOtherTank(n);
+      }
+    }
+  }
 
   ArrayList<Node> getNeighboringNodes(Node current) {
     ArrayList<Node> neighbors = new ArrayList<Node>(); 
