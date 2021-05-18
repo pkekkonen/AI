@@ -129,15 +129,10 @@ void setup(){
   timer = new Timer();
   timer.setDirection("down");
   timer.setTime(startTime);
-  new Thread()
-{
-    public void run() {
-       allTanks[0].startPatrolling();
-       allTanks[1].startPatrolling();
-       allTanks[2].startPatrolling();
-    }
-}.start();
+  teams[0].startPatrolling();
+  
 }
+      
 
 
 void draw() {

@@ -15,7 +15,9 @@ class Team {
   color team_color;
   StopWatchTimer timer;
   int numberOfHits; // sammalagda antalet bekräftade träffar på andra lagets tanks. 
-
+  float heading;
+  Node target;
+  boolean patrolling;
 
   Team (int team_id, int tank_size, color c, 
     PVector tank0_startpos, int tank0_id, CannonBall ball0, 
@@ -60,10 +62,41 @@ class Team {
   void updateLogic() {
   }
 
+  void startPatrolling() {
+    target = getNextTarget();
+    flock();
+    patrolling = true;
+    new Thread() {
+      public void run() {
+        while (patrolling) {
+          flock();
+          setHeading();
+          for (Tank t : tanks) {
+            if (!grid.getNearestNode(t.position).equals(t.currentNode) ) {
+              t.lastVisitedNode = t.currentNode;
+              t.currentNode = grid.getNearestNode(t.position);
+              patrolled.put(t.currentNode, -1);
+              assignCostValue(new ArrayList<Node>(), t.currentNode);
+              showGrid();
+            }
+          }
+          if (patrolled.containsKey(target)) {
+            target = getNextTarget();
+          }
+        }
+      }
+    }
+    .start();
+  }
 
-  Node getNextTarget(Tank t) {
-    Node currentNode = grid.getNearestNode(t.position);
-    Node target = null; 
+  void flock() {
+    for (Tank t : tanks) {
+      //t.moveTo(PVector.fromAngle(heading));
+      t.flock();
+    }
+  }
+  Node getNextTarget() {
+    Node currentNode = grid.getNearestNode(getAveragePosition());
     ArrayList<Node> neighbors = getNeighboringNodes(currentNode); 
     Collections.shuffle(neighbors); 
     for (Node temp : neighbors) {
@@ -74,48 +107,48 @@ class Team {
         target = temp;
       }
     }
-    checkEnvironment(t); 
+    setHeading();
+    System.out.println(target.x + " " + target.y);
     return target;
   }
   
-  void checkEnvironment(Tank t) {
-    //checkEnvironment_sensor();
-
-    // Check for collisions with Canvas Boundaries
-    float r = t.diameter/2;
-    if ((t.position.y+r > height) || (t.position.y-r < 0) ||
-      (t.position.x+r > width) || (t.position.x-r < 0)) {
-      if (!t.stop_state) {
-        t.position.set(t.positionPrev); // Flytta tillbaka.
-        //println("***");
-        t.stopMoving_state();
-      }
-    }
-
-    if (
-      t.position.x > homebase_x && 
-      t.position.x < homebase_x+homebase_width &&
-      t.position.y > homebase_y &&
-      t.position.y < homebase_y+homebase_height) {
-      if (!t.isAtHomebase) {
-        t.isAtHomebase = true;
-
-        // checks if reporting tank has just arrived to the homebase
-        if (t.isReporting) {
-          timer = new StopWatchTimer();
-          timer.start();
-          t.isReporting = false;
-          t.isReportingInHomebase = true;
-          patrolled.put(t.lastSeenEnemy, Integer.MAX_VALUE);
-          for (Node n : getNeighboringNodes(t.lastSeenEnemy)) {
-            patrolled.put(n, Integer.MAX_VALUE);
+  void showGrid() {
+    System.out.println(target.x + " " + target.y);
+    System.out.println(getAveragePosition());
+    System.out.println(heading);
+    for (int i = 0; i < grid.nodes.length; i++) {
+      for (int j = 0; j < grid.nodes[i].length; j++) {
+        if (patrolled.containsKey(grid.nodes[j][i])) {
+          if (patrolled.get(grid.nodes[j][i]) == Integer.MAX_VALUE) {
+            System.out.print("& ");
+          } else {
+            System.out.print(patrolled.get(grid.nodes[j][i]) + " ");
           }
+        } else {
+          System.out.print(0 + " ");
         }
-        t.message_arrivedAtHomebase();
       }
-    } else {
-      t.isAtHomebase = false;
+      System.out.println();
     }
+    System.out.println();
+  }
+
+  PVector getAveragePosition() {
+    PVector sum = new PVector();
+    for (Tank t : tanks) {
+      sum.add(t.position);
+    }
+    sum.div(tanks.length);
+
+    return sum;
+  }
+
+  float getHeading() {
+    return heading;
+  }
+
+  void setHeading() {
+    heading = PVector.angleBetween(getAveragePosition().normalize(), target.position);
   }
 
   ArrayList<Node> getNeighboringNodes(Node current) {
@@ -144,26 +177,26 @@ class Team {
   void assignCostValue(ArrayList<Node> finished, Node n) {
     ArrayList<Node> neighbors = getNeighboringNodes(n);
     float r = tank_size/2;
-      for (Node temp : neighbors) {
-        if (finished.contains(temp)) {
-          continue;
-        }
-        if (!patrolled.containsKey(temp)) {
-          if ((temp.position.y+r >= height) || (temp.position.y-r <= 0) ||
-            (temp.position.x+r >= width) || (temp.position.x-r <= 0) ) { 
-            patrolled.put(temp, Integer.MAX_VALUE);
-          } else {
-            patrolled.put(n, 1);
-            backPropagate(n, 1);
-          }
-        } else {
-          if (!finished.contains(n)) {
-            finished.add(n);
-          }
-
-          assignCostValue(finished, temp);
-        }
+    for (Node temp : neighbors) {
+      if (finished.contains(temp)) {
+        continue;
       }
+      if (!patrolled.containsKey(temp)) {
+        if ((temp.position.y+r >= height) || (temp.position.y-r <= 0) ||
+          (temp.position.x+r >= width) || (temp.position.x-r <= 0) ) { 
+          patrolled.put(temp, Integer.MAX_VALUE);
+        } else {
+          patrolled.put(n, 1);
+          backPropagate(n, 1);
+        }
+      } else {
+        if (!finished.contains(n)) {
+          finished.add(n);
+        }
+
+        assignCostValue(finished, temp);
+      }
+    }
   } 
   // Används inte.
   // Hemma i homebase
@@ -186,29 +219,29 @@ class Team {
 }
 
 // Got from https://forum.processing.org/one/topic/timer-in-processing.html. The class is used to make sure the tank stays still for three seconds after reporting to its homebase 
-  class StopWatchTimer {
-    int startTime = 0, stopTime = 0;
-    boolean running = false;  
+class StopWatchTimer {
+  int startTime = 0, stopTime = 0;
+  boolean running = false;  
 
 
-    void start() {
-      startTime = millis();
-      running = true;
-    }
-    void stop() {
-      stopTime = millis();
-      running = false;
-    }
-    int getElapsedTime() {
-      int elapsed;
-      if (running) {
-        elapsed = (millis() - startTime);
-      } else {
-        elapsed = (stopTime - startTime);
-      }
-      return elapsed;
-    }
-    int seconds() {
-      return (getElapsedTime() / 1000) % 60;
-    }
+  void start() {
+    startTime = millis();
+    running = true;
   }
+  void stop() {
+    stopTime = millis();
+    running = false;
+  }
+  int getElapsedTime() {
+    int elapsed;
+    if (running) {
+      elapsed = (millis() - startTime);
+    } else {
+      elapsed = (stopTime - startTime);
+    }
+    return elapsed;
+  }
+  int seconds() {
+    return (getElapsedTime() / 1000) % 60;
+  }
+}

@@ -1,4 +1,4 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>//
 
 import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
@@ -1306,7 +1306,7 @@ class Tank extends Sprite {
       public void run() {
         while (patrolling) {
           try {
-            flock(new ArrayList<Tank>(Arrays.asList(team.tanks)));
+            flock();
             Thread.sleep(1000);
           }
           catch(InterruptedException e) {
@@ -1636,56 +1636,62 @@ class Tank extends Sprite {
     }
   }
 
-  void flock(ArrayList<Tank> tanks) {
-    tanks.remove(this);
+  void flock() {
+    ArrayList<Tank> flock = new ArrayList(Arrays.asList(team.tanks));
+    flock.remove(this);
 
-    PVector sep = separate(tanks);
-    PVector ali = align(tanks);
-    PVector coh = cohesion(tanks);
-
-    sep.mult(1.5);
+    PVector sep = separate(flock);
+    PVector ali = align(flock);
+    PVector coh = cohesion(flock);
+    PVector hea = new PVector(cos(team.getHeading()), sin(team.getHeading()));
+    sep.mult(15.0);
     ali.mult(1.0);
     coh.mult(1.0);
-
     applyForce(sep);
     applyForce(ali);
     applyForce(coh);
+    //applyForce(hea);
+    
   }
 
   PVector align(ArrayList<Tank> tanks) {
-    if (tanks.size() == 0) {
-      return new PVector(0, 0);
-    }
+    float dist = 50;
 
     PVector sum = new PVector();
+    int count = 0;
     for (Tank other : tanks) {
+      float d = PVector.dist(position, other.position);
+      if((d > 0) && (d < dist)){
       sum.add(other.velocity);
+      count++;
+      }
     }
-    sum.div(tanks.size());
+    if(count > 0){
+    sum.div(count);
     sum.setMag(maxspeed);
     PVector steer = PVector.sub(sum, velocity);
     steer.limit(maxforce);
     return steer;
+    }
+    return new PVector();
   }
 
 
   PVector separate(ArrayList<Tank> tanks) {
-    if (tanks.size() == 0) {
-      return new PVector(0, 0);
-    }
     float desiredseparation = 65.0f; // TODO: bra värde??
     PVector steer = new PVector(0,0,0);
+    int count = 0;
     for (Tank other : tanks) {
       float d = PVector.dist(position, other.position);
-
-      if (d < desiredseparation) {
+      if ((d > 0) && (d < desiredseparation)) {
         PVector diff = PVector.sub(position,other.position);
         diff.normalize();
         diff.div(d);
         steer.add(diff);
+        count++;
       }
     }
-    if(tanks.size() > 0)
+    if(count > 0)
       steer.div((float)tanks.size());
       
         // As long as the vector is greater than 0
@@ -1700,25 +1706,30 @@ class Tank extends Sprite {
   }
 
   PVector cohesion(ArrayList<Tank> tanks) {
-    if (tanks.size() == 0) {
-      return new PVector(0,0);
-    }
+    float dist = 50;
+    int count = 0;
     PVector sum = new PVector(0,0);
     for (Tank other : tanks) {
+      float d = PVector.dist(position, other.position);
+      if((d > 0) && (d < dist)){
       sum.add(other.position);
+      count++;
+      }
     }
-    sum.div(tanks.size());
+    if(count > 0) {
+    sum.div(count);
     sum.sub(position);
     return seek(sum);
+    }
+    return new PVector();
   }
 
   // A method that calculates and applies a steering force towards a target
   // STEER = DESIRED MINUS VELOCITY
   PVector seek(PVector target) {
     PVector desired = PVector.sub(target, position);
-    desired.normalize();
-    desired.mult(maxspeed);
-    PVector steer=PVector.sub(desired, velocity);
+    desired.setMag(maxspeed);
+    PVector steer = PVector.sub(desired, velocity);
     steer.limit(maxforce);
     return steer;
   }
