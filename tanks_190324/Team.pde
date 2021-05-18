@@ -91,7 +91,7 @@ class Team {
 
   void flock() {
     for (Tank t : tanks) {
-      //t.moveTo(PVector.fromAngle(heading));
+      t.moveTo(new PVector(target.x, target.y));
       t.flock();
     }
   }
