@@ -47,6 +47,11 @@ class Node {
       this.content = s;  
     }
   }
+  
+  //***************************************************  
+  void removeContent() {
+      this.content = null;  
+  }
 
   //***************************************************
   boolean empty() {

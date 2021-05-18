@@ -77,7 +77,7 @@ class Team {
               t.currentNode = grid.getNearestNode(t.position);
               patrolled.put(t.currentNode, -1);
               assignCostValue(new ArrayList<Node>(), t.currentNode);
-              showGrid();
+              //showGrid();
             }
           }
           if (patrolled.containsKey(target)) {
@@ -108,7 +108,7 @@ class Team {
       }
     }
     setHeading();
-    System.out.println(target.x + " " + target.y);
+    //System.out.println(target.x + " " + target.y + " "+this.id);
     return target;
   }
   
@@ -157,8 +157,12 @@ class Team {
       for (int j = -1; j < 2; j++) {
         if ((current.col + i >= 0) && (current.row + j >= 0) && !(i == 0 && j == 0) 
           && (current.col + i <= 14) && (current.row + j <= 14)) { 
-          Node n = new Node(current.col + i, current.row + j, ((current.col + i)*grid.grid_size+grid.grid_size), ((current.row+j)*grid.grid_size+grid.grid_size)); 
-          neighbors.add(n);
+          //Node n = new Node(current.col + i, current.row + j, ((current.col + i)*grid.grid_size+grid.grid_size), ((current.row+j)*grid.grid_size+grid.grid_size)); 
+          PVector near = new PVector(((current.col + i)*grid.grid_size+grid.grid_size), ((current.row+j)*grid.grid_size+grid.grid_size));
+          Node n = grid.getNearestNode(near);
+          if (n.content == null) {
+            neighbors.add(n);
+          }
         }
       }
     }

@@ -24,7 +24,7 @@ class Tree extends Sprite {
   void checkCollision(Tank other) {
     
 
-    // Get distances between the balls components
+    // Get distancs between the balls components
     PVector distanceVect = PVector.sub(other.position, position);
 
     // Calculate magnitude of the vector separating the balls

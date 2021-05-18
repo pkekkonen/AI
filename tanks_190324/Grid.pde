@@ -181,6 +181,17 @@ class Grid {
     Node n = getNearestNode(s.position);
     n.addContent(s);
   }
+  
+   //***************************************************
+  // om tom så addContent(Sprite)
+  void addContent(Node n, Sprite s) {
+    n.addContent(s);
+  }
+  
+  //***************************************************
+  void removeContent(Node n) {
+    n.removeContent();
+  }
 
   //***************************************************  
 

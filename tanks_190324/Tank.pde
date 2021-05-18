@@ -1,6 +1,6 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -565,7 +565,7 @@ class Tank extends Sprite {
 
   //**************************************************
   void moveTo(float x, float y) {
-    println("*** Tank["+ this.getId() + "].moveTo(" +x +", "+ y+")");
+    //println("*** Tank["+ this.getId() + "].moveTo(" +x +", "+ y+")");
 
     moveTo(new PVector(x, y));
   }
@@ -574,7 +574,7 @@ class Tank extends Sprite {
   void moveTo(PVector coord) {
     //println("*** Tank["+ this.getId() + "].moveTo(PVector)");
     if (!isImmobilized) {
-      println("*** Tank["+ this.getId() + "].moveTo(" +coord.x +", "+ coord.y+")");
+      //println("*** Tank["+ this.getId() + "].moveTo(" +coord.x +", "+ coord.y+")");
 
 
       this.idle_state = false;
@@ -864,6 +864,7 @@ class Tank extends Sprite {
   //**************************************************
   void arrived() {
     println("*** Tank["+ this.getId() + "].arrived()");
+    target.isEmpty = false;
     this.isMoving = false;  
     okayToGoNextStepHome = true;
     stopMoving_state();
@@ -994,11 +995,40 @@ class Tank extends Sprite {
           turnTurretRight();
         }
 
-
         readSensors();
       }
+      updateContent();
       updatePosition();
     }
+
+  }
+  
+  //**************************************************
+  void updateContent(){
+    if(!(this.lastVisitedNode == null)) {
+         grid.removeContent(this.lastVisitedNode);
+    }
+   grid.addContent(this);
+   
+   if(this.id == 1){
+     //showContentGrid();
+   }
+  }
+   
+  //**************************************************
+  void showContentGrid(){
+     Node[][] nodes = grid.nodes;
+    println();
+    for(int i = 0; i < nodes.length; i++) {
+       for(int j= 0; j < nodes.length; j++) {
+         if(!(nodes[j][i].content() == null)) {
+         print(nodes[j][i].content().getName()+" ");
+         }else {
+           print(nodes[j][i].content()+" ");
+         }
+       }
+       println();
+     }
   }
 
   //**************************************************
@@ -1035,7 +1065,7 @@ class Tank extends Sprite {
           for (Node n : getNeighboringNodes(lastSeenEnemy)) {
             patrolled.put(n, Integer.MAX_VALUE);
           }
-          showGrid();
+          //showGrid();
         }
         message_arrivedAtHomebase();
       }
@@ -1148,6 +1178,7 @@ class Tank extends Sprite {
       message_collision(other);
     }
     checkTankForward(other);
+    checkTankForward();
   }
 
   void setNode() {
@@ -1324,9 +1355,7 @@ class Tank extends Sprite {
     assignCostValue(new ArrayList<Node>(), currentNode);
     patrolling = true;
     Node target = getNextTarget();
-
     vectorTarget = new PVector(target.x, target.y);
-
     moveTo(vectorTarget);
   }
   void keepPatrolling() {
@@ -1359,6 +1388,7 @@ class Tank extends Sprite {
     //Om tanken är på en ny plats så ska den omdeklarera vad som är dens nuvarande nod och dess senaste nod
     //Sätt nuvarande noden i listan över patrullerade noder, med värdet -1 för att signalera att den inte är uträknad
     if (grid.getNearestNode(position) != currentNode) {
+      lastVisitedNode.isEmpty = true;
       lastVisitedNode = currentNode;
       currentNode = grid.getNearestNode(position);
       patrolled.put(currentNode, -1);
@@ -1458,12 +1488,60 @@ class Tank extends Sprite {
       return;
     }
     PVector viewForward = PVector.add(position, new PVector((float)Math.cos(heading), (float)Math.sin(heading)).mult(this.diameter*2)); 
-    PVector distanceVect = PVector.sub(other.position, viewForward); 
-    float distanceVectMag = distanceVect.mag(); 
-    float minDistance = this.radius + other.radius; 
-    if (distanceVectMag <= minDistance) {
-      tankAhead = true;
+      PVector distanceVect = PVector.sub(other.position, viewForward); 
+      float distanceVectMag = distanceVect.mag(); 
+      float minDistance = this.radius + other.radius; 
+      if (distanceVectMag <= minDistance) {
+        tankAhead = true;
+      }
     }
+  
+    //Kollar om någon av fiendetankerna är framför tankens synfält
+  void checkTankForward() {
+    HashMap sighted = checkForward();
+    if(sighted.containsKey("tank")) { 
+      PVector near = (PVector) sighted.get("tank");
+      Node n = grid.getNearestNode(near);
+      Tank other = (Tank) n.content();
+        if(other.team_id != this.team_id) { 
+          //println("*** Tank[" + this.id+"] " + sighted);
+          tankAhead = true;
+        }
+      }
+    }
+  
+  HashMap checkForward() {
+    Direction dir = this.getDirection();
+    HashMap<String, PVector> sighted = new HashMap<String, PVector>();
+      int x = 0, y = 0;
+        if (dir == Direction.NORTH || dir == Direction.NORTHWEST || dir == Direction.NORTHEAST) {
+          y = 50;
+        } else if (dir == Direction.SOUTH || dir == Direction.SOUTHWEST || dir == Direction.SOUTHEAST) {
+          y = -50;
+        } 
+
+        if(dir == Direction.WEST || dir == Direction.SOUTHWEST || dir == Direction.NORTHWEST) {
+          x = -50;
+        } else if (dir == Direction.EAST || dir == Direction.NORTHEAST || dir == Direction.SOUTHEAST) {
+          x = 50;
+        } 
+        float currX = currentNode.x;
+        float currY = currentNode.y;
+        
+        currX += x;
+        currY += y;
+//***********************************************************************************************************TODO Kolla om inom fiendebas
+        while(currX < width && currX > 0 && currY < height &&currY > 0) {
+          PVector near = new PVector(currX, currY);
+          Node forwardNode = grid.getNearestNode(near);
+          if(!(forwardNode.content() == null)) {
+            sighted.put(forwardNode.content().getName(), forwardNode.position);
+            return sighted;
+          }
+          currX += x;
+          currY += y;
+        }
+    return sighted;
   }
 
   //*****************************
@@ -1515,7 +1593,7 @@ class Tank extends Sprite {
       List<Node> children = grid.getNodesNeighbours(current.node);
 
       for (Node n : children) {
-        if (patrolled.containsKey(n) && !(n.content instanceof Tree)) {
+        if (patrolled.containsKey(n) && !(n.content.getName() == "tree")) {
           double gValue = calculateGValue(current, n);
           double hValue = calculateHeuristics(n);
           double fValue = gValue+hValue;
@@ -1558,6 +1636,28 @@ class Tank extends Sprite {
       return Direction.WEST;
     } else {
       return Direction.NORTHWEST;
+    }
+  }
+  
+    Direction getDirection() {
+    float heading = this.getHeadingInDegrees();
+      
+    if ((heading > 22.5) && (heading < 67.6)) {
+      return Direction.SOUTHEAST;
+    } else if ((heading > 67.5) && (heading < 112.6)) {
+      return Direction.SOUTH;
+    } else if ((heading > 112.5) && (heading < 157.6)) {
+      return Direction.SOUTHWEST;
+    } else if ((heading > 157.5) && (heading < 202.6)) {
+      return Direction.WEST;
+    } else if ((heading > 202.5) && (heading < 247.6)) {
+      return Direction.NORTHWEST;
+    } else if ((heading > 247.5) && (heading < 292.6)) {
+      return Direction.NORTH;
+    } else if ((heading > 292.5) && (heading < 337.6)) {
+      return Direction.NORTHEAST;
+    } else {
+      return Direction.EAST;
     }
   }
 

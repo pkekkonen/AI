@@ -83,6 +83,19 @@ void setup(){
   allTrees[0] = new Tree(230, 600);
   allTrees[1] = new Tree(280,230);//280,230(300,300)
   allTrees[2] = new Tree(530, 520);//530, 520(500,500);
+  
+ for (Tree t : allTrees) {
+   grid.addContent(t);
+   Node node = grid.getNearestNode(t.position);
+   List<Node> tree_nearest = grid.getNodesNeighbours(node);
+   for(Node n : tree_nearest) {
+     if(n.x < (t.position.x + t.radius) && n.y < (t.position.y + t.radius) &&
+         n.x > (t.position.x-t.radius) && n.y > (t.position.y-t.radius)){
+       grid.addContent(n, t);
+     }
+   }
+ }
+  
 
   // Skapa alla skott
   for (int i = 0; i < allShots.length; i++) {
@@ -92,7 +105,7 @@ void setup(){
   // Team0
   team0_tank0_startpos = new PVector(50, 50);
   team0_tank1_startpos = new PVector(50, 150);
-  team0_tank2_startpos = new PVector(50, 250);
+  team0_tank2_startpos = new PVector(50, height-50);
 
   // Team1
   team1_tank0_startpos = new PVector(width-50, height-250);
@@ -119,6 +132,10 @@ void setup(){
   allTanks[4] = teams[1].tanks[1];
   allTanks[5] = teams[1].tanks[2];
   
+  for (Tank t : allTanks) {
+   grid.addContent(t);
+  }
+  
   loadShots();
   userControl = false;
   tankInFocus = 0;
@@ -131,7 +148,19 @@ void setup(){
   timer.setTime(startTime);
   teams[0].startPatrolling();
   
-}
+  Node[][] nodes = grid.nodes;
+
+   for(int i = 0; i < nodes.length; i++) {
+       for(int j= 0; j < nodes.length; j++) {
+         if(!(nodes[j][i].content() == null)) {
+         print(nodes[j][i].content().getName()+" ");
+         }else {
+           print(nodes[j][i].content()+" ");
+         }
+       }
+       println();
+     }
+   }
       
 
 
