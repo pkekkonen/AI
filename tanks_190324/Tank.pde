@@ -162,8 +162,8 @@ class Tank extends Sprite {
 
     this.ball = ball;
     this.hasShot = false;
-    this.maxspeed = 3; //3;
-    this.maxforce = 0.1;
+    this.maxspeed = 2; //3;
+    this.maxforce = 0.01;
     this.maxrotationspeed = radians(3);
     this.rotation_speed = 0;
     this.image_scale = 0.5;
@@ -727,9 +727,7 @@ class Tank extends Sprite {
 
   //**************************************************
   void updatePosition() {
-
     this.positionPrev.set(this.position); // spara senaste pos.
-
     this.velocity.add(this.acceleration);
     this.velocity.limit(this.maxspeed);
     this.position.add(this.velocity);
@@ -904,7 +902,7 @@ class Tank extends Sprite {
       } else {
 
         // Om tanken är redo för handling och kan agera.
-        if (!this.isImmobilized && this.isReady) {  
+        if (!this.isImmobilized && this.isReady) {
 
           if (isReporting && okayToGoNextStepHome) {
             takeOneMoreStepHome();
@@ -920,14 +918,14 @@ class Tank extends Sprite {
               isReportingInHomebase = false;
               isReporting = false;
               tankAhead = false;
-              startPatrolling();
+              //startPatrolling();
               println("EFTER: ");
             }
           }
-
+          /*
           if (patrolling) {
             keepPatrolling();
-          }
+          } */
 
           // Om tanken är i rörelse.
           if (this.isMoving) {
@@ -1331,13 +1329,14 @@ class Tank extends Sprite {
     findShortestPathHome();
   }
 
+  
   //Denna metod påbörjar patrulleringen
   void startPatrolling() {
     new Thread() {
       public void run() {
         while (patrolling) {
           try {
-            flock();
+            //flock(target);
             Thread.sleep(1000);
           }
           catch(InterruptedException e) {
@@ -1352,12 +1351,14 @@ class Tank extends Sprite {
     if (lastVisitedNode == null) {
       lastVisitedNode = currentNode;
     }
+  
     assignCostValue(new ArrayList<Node>(), currentNode);
     patrolling = true;
     Node target = getNextTarget();
     vectorTarget = new PVector(target.x, target.y);
     moveTo(vectorTarget);
   }
+  
   void keepPatrolling() {
 
     //Om det är en tank framför en så ska tanken återvända till senast besökta noden som en reträtt
@@ -1394,14 +1395,12 @@ class Tank extends Sprite {
       patrolled.put(currentNode, -1);
       assignCostValue(new ArrayList<Node>(), currentNode);
       target = getNextTarget();
-
       vectorTarget = new PVector(target.x, target.y);
       moveTo(vectorTarget);
     }
   }
-
+  
   //Denna metod kollar en nods alla grannar, om nån av dem är opatrullerad får noden värdet 1, då den är 1 steg från ett mål
-
   void assignCostValue(ArrayList<Node> finished, Node n) {
     ArrayList<Node> neighbors = getNeighboringNodes(n);
     float r = this.diameter/2;
@@ -1735,66 +1734,94 @@ class Tank extends Sprite {
       return Math.sqrt(Math.pow((team.homebase_x+team.homebase_width)-n.x, 2)+Math.pow((team.homebase_y+team.homebase_height)-n.y, 2));
     }
   }
-
-  void flock() {
+  
+  
+    // We accumulate a new acceleration each time based on three rules
+  void flock(Node target_from) {
     ArrayList<Tank> flock = new ArrayList(Arrays.asList(team.tanks));
-    flock.remove(this);
-
-    PVector sep = separate(flock);
-    PVector ali = align(flock);
-    PVector coh = cohesion(flock);
-    PVector hea = new PVector(cos(team.getHeading()), sin(team.getHeading()));
-    sep.mult(15.0);
+    PVector sep = separate(flock);   // Separation
+    PVector ali = align(flock);      // Alignment
+    PVector coh = cohesion(flock);   // Cohesion
+    PVector targ = seek_heur_target(target_from);
+    PVector tree = crash();
+    // Arbitrarily weight these forces
+    sep.mult(1.4);
     ali.mult(1.0);
     coh.mult(1.0);
+    targ.mult(1.5);
+    tree.mult(50);
+    // Add the force vectors to acceleration
     applyForce(sep);
     applyForce(ali);
     applyForce(coh);
-    //applyForce(hea);
-    
+    applyForce(targ);
+    applyForce(tree);
+    println("positionen " + this.position + " hos tank " + this.id);
+  }
+  
+  Boolean checkIfRotating(Node target_from) {
+    println("target_from_teams " + target_from + " current target " + this.target + " hos tank " + this.id);
+      this.target = target_from;
+      this.hasTarget = true;
+      this.targetPosition.set(target_from.position);
+      rotateTo(targetPosition);
+      return true;
   }
 
-  PVector align(ArrayList<Tank> tanks) {
-    float dist = 50;
-
-    PVector sum = new PVector();
-    int count = 0;
-    for (Tank other : tanks) {
-      float d = PVector.dist(position, other.position);
-      if((d > 0) && (d < dist)){
-      sum.add(other.velocity);
-      count++;
-      }
-    }
-    if(count > 0){
-    sum.div(count);
-    sum.setMag(maxspeed);
-    PVector steer = PVector.sub(sum, velocity);
-    steer.limit(maxforce);
+  // A method that calculates and applies a steering force towards a target
+  // STEER = DESIRED MINUS VELOCITY
+  PVector seek(PVector target) {
+    PVector desired = PVector.sub(target,position);  // A vector pointing from the position to the target;esired);
+    // Normalize desired and scale to maximum speed
+    desired.normalize();
+    desired.mult(maxspeed);
+    // Steering = Desired minus Velocity
+    PVector steer = PVector.sub(desired,velocity);
+    steer.limit(maxforce);  // Limit to maximum steering force
     return steer;
-    }
-    return new PVector();
+  }
+  
+    // A method that calculates and applies a steering force towards a target
+  // STEER = DESIRED MINUS VELOCITY
+  PVector seek_heur_target(Node target_from) {
+    target = target_from;
+    PVector desired = PVector.sub(target_from.position, position);  // A vector pointing from the position to the target
+    //println("desired:  "+desired);
+    // Normalize desired and scale to maximum speed
+    desired.normalize();
+    desired.mult(maxspeed);
+    // Steering = Desired minus Velocity
+    PVector steer = PVector.sub(desired,velocity);
+    steer.limit(maxforce);  // Limit to maximum steering force
+    return steer;
   }
 
-
-  PVector separate(ArrayList<Tank> tanks) {
-    float desiredseparation = 65.0f; // TODO: bra värde??
+  // Separation
+  // Method checks for nearby tanks and steers away
+  PVector separate (ArrayList<Tank> tanks) {
+    float desiredseparation = this.radius*3;
     PVector steer = new PVector(0,0,0);
     int count = 0;
+    // For every tank in the system, check if it's too close
     for (Tank other : tanks) {
-      float d = PVector.dist(position, other.position);
+      float d = PVector.dist(position,other.position);
+      // If the distance is greater than 0 and less than an arbitrary amount (0 when you are yourself)
       if ((d > 0) && (d < desiredseparation)) {
+        // Calculate vector pointing away from neighbor
         PVector diff = PVector.sub(position,other.position);
+        //println("diff " + diff);
         diff.normalize();
-        diff.div(d);
+        diff.div(d);        // Weight by distance
         steer.add(diff);
-        count++;
+        count++;            // Keep track of how many tanks
       }
     }
-    if(count > 0)
-      steer.div((float)tanks.size());
-      
-        // As long as the vector is greater than 0
+    // Average -- divide by how many
+    if (count > 0) {
+      steer.div((float)count);
+    }
+
+    // As long as the vector is greater than 0
     if (steer.mag() > 0) {
       // Implement Reynolds: Steering = Desired - Velocity
       steer.normalize();
@@ -1802,38 +1829,132 @@ class Tank extends Sprite {
       steer.sub(velocity);
       steer.limit(maxforce);
     }
+    //println(steer + " separate");
     return steer;
   }
 
-  PVector cohesion(ArrayList<Tank> tanks) {
-    float dist = 50;
-    int count = 0;
+  // Alignment
+  // For every nearby tank in the system, calculate the average velocity
+  PVector align (ArrayList<Tank> tanks) {
+    float neighbordist = 300;
     PVector sum = new PVector(0,0);
+    int count = 0;
     for (Tank other : tanks) {
-      float d = PVector.dist(position, other.position);
-      if((d > 0) && (d < dist)){
-      sum.add(other.position);
-      count++;
+      float d = PVector.dist(position,other.position);
+      if ((d > 0) && (d < neighbordist)) {
+        sum.add(other.velocity);
+        count++;
       }
     }
-    if(count > 0) {
-    sum.div(count);
-    sum.sub(position);
-    return seek(sum);
+    if (count > 0) {
+      sum.div((float)count);
+      sum.normalize();
+      sum.mult(maxspeed);
+      PVector steer = PVector.sub(sum,velocity);
+      steer.limit(maxforce);
+      return steer;
+    } else {
+      return new PVector(0,0);
     }
-    return new PVector();
   }
 
-  // A method that calculates and applies a steering force towards a target
+  // Cohesion
+  // For the average position (i.e. center) of all nearby tanks, calculate steering vector towards that position
+  PVector cohesion (ArrayList<Tank> tanks) {
+    float neighbordist = this.radius*2;
+    PVector sum = new PVector(0,0);   // Start with empty vector to accumulate all positions
+    int count = 0;
+    for (Tank other : tanks) {
+      float d = PVector.dist(position,other.position);
+      if ((d > 0) && (d < neighbordist)) {
+        sum.add(other.position); // Add position
+        count++;
+      }
+    }
+    if (count > 0) {
+      sum.div(count);
+      return seek(sum);  // Steer towards the position
+    } else {
+      return new PVector(0,0);
+    }
+  }
+  
+  // Crash
+  // check if tree is immenent
+  PVector crash () {
+    HashMap checkTree = this.checkForward();
+    if (checkTree.containsKey("tree")) {
+      PVector tree = (PVector) checkTree.get("tree");
+      float undesired = PVector.dist(tree, position);  // how long until tree
+      // Normalize desired and scale to maximum speed
+      if(undesired < 50) {
+          PVector steer = new PVector(750,750);
+          steer.normalize();
+          steer.mult(maxspeed);
+          steer.limit(maxforce);  // Limit to maximum steering force
+          return steer;
+      }
+    }
+    return new PVector(0,0);
+  }
+  
+  /*
+  void applyBehaviors(Tank[] tanks) {
+     PVector separateForce = separate(tanks);
+     PVector seekForce = seek(targetPosition);
+     separateForce.mult(2);
+     seekForce.mult(1);
+     applyForce(separateForce);
+     applyForce(seekForce); 
+  }
+  
+    // A method that calculates a steering force towards a target
   // STEER = DESIRED MINUS VELOCITY
   PVector seek(PVector target) {
-    PVector desired = PVector.sub(target, position);
-    desired.setMag(maxspeed);
-    PVector steer = PVector.sub(desired, velocity);
-    steer.limit(maxforce);
+    PVector desired = PVector.sub(target,position);  // A vector pointing from the position to the target
+    
+    // Normalize desired and scale to maximum speed
+    desired.normalize();
+    desired.mult(maxspeed);
+    // Steering = Desired minus velocity
+    PVector steer = PVector.sub(desired,velocity);
+    steer.limit(maxforce);  // Limit to maximum steering force
+    
     return steer;
   }
 
+  // Separation
+  // Method checks for nearby tanks and steers away
+  PVector separate (Tank[] tanks) {
+    float desiredseparation = radius*2;
+    PVector sum = new PVector();
+    int count = 0;
+    // For every boid in the system, check if it's too close
+    for (Tank other : tanks) {
+      float d = PVector.dist(position, other.position);
+      // If the distance is greater than 0 and less than an arbitrary amount (0 when you are yourself)
+      if ((d > 0) && (d < desiredseparation)) {
+        // Calculate vector pointing away from neighbor
+        PVector diff = PVector.sub(position, other.position);
+        diff.normalize();
+        diff.div(d);        // Weight by distance
+        sum.add(diff);
+        count++;            // Keep track of how many
+      }
+    }
+    // Average -- divide by how many
+    if (count > 0) {
+      sum.div(count);
+      // Our desired vector is the average scaled to maximum speed
+      sum.normalize();
+      sum.mult(maxspeed);
+      // Implement Reynolds: Steering = Desired - Velocity
+      sum.sub(velocity);
+      sum.limit(maxforce);
+    }
+    return sum;
+  }
+  */
 
   // container used for the A* algorithm
   class AStarNode {

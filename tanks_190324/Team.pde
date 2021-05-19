@@ -64,13 +64,14 @@ class Team {
 
   void startPatrolling() {
     target = getNextTarget();
-    flock();
+    println(target);
+    flock(target);
     patrolling = true;
     new Thread() {
       public void run() {
         while (patrolling) {
-          flock();
-          setHeading();
+          flock(target);
+          //setHeading();
           for (Tank t : tanks) {
             if (!grid.getNearestNode(t.position).equals(t.currentNode) ) {
               t.lastVisitedNode = t.currentNode;
@@ -89,12 +90,15 @@ class Team {
     .start();
   }
 
-  void flock() {
+  void flock(Node target) {
     for (Tank t : tanks) {
-      t.moveTo(new PVector(target.x, target.y));
-      t.flock();
+      //t.moveTo(new PVector(target.x, target.y));
+      if (t.checkIfRotating(target)) {
+        t.flock(target);
+      }
     }
   }
+  
   Node getNextTarget() {
     Node currentNode = grid.getNearestNode(getAveragePosition());
     ArrayList<Node> neighbors = getNeighboringNodes(currentNode); 
@@ -107,7 +111,7 @@ class Team {
         target = temp;
       }
     }
-    setHeading();
+    //setHeading();
     //System.out.println(target.x + " " + target.y + " "+this.id);
     return target;
   }
@@ -146,10 +150,11 @@ class Team {
   float getHeading() {
     return heading;
   }
-
+/*
   void setHeading() {
     heading = PVector.angleBetween(getAveragePosition().normalize(), target.position);
   }
+  */
 
   ArrayList<Node> getNeighboringNodes(Node current) {
     ArrayList<Node> neighbors = new ArrayList<Node>(); 
