@@ -729,15 +729,17 @@ class Tank extends Sprite {
   //**************************************************
   void updatePosition() {
     this.positionPrev.set(this.position); // spara senaste pos.
-    println("positionen " + this.position + " hos tank " + this.id);
-    println("acceleration " + this.acceleration + " hos tank " + this.id);
-    println("velocity " + this.velocity + " hos tank " + this.id);
+    if (this.team_id == 0) {
+      println("positionen " + this.position + " hos tank " + this.id);
+      println("acceleration " + this.acceleration + " hos tank " + this.id);
+      println("velocity " + this.velocity + " hos tank " + this.id);
+    }
     this.velocity.add(this.acceleration);
     this.velocity.limit(this.maxspeed);
     this.position.add(this.velocity);
     this.acceleration.mult(0);
     count++;
-    if (count > 150){
+    if (count % 10 == 0){
       pause = true;
     }
   }
@@ -1455,11 +1457,14 @@ class Tank extends Sprite {
     //println("positionen " + this.position + " hos tank " + this.id);
   }
   
-  Boolean checkIfRotating(Node target_from) {
-      this.target = target_from;
+  Boolean checkIfRotating() {
+      PVector pos = this.position;
+      PVector targ = pos.add(this.velocity);
+      println(targ);
+      println(targ.heading());
       this.hasTarget = true;
-      this.targetPosition.set(target_from.position);
-      rotateTo(targetPosition);
+      //this.targetPosition.set(targ);
+      rotateTo(targ.heading());
       return true;
   }
 
@@ -1595,7 +1600,7 @@ class Tank extends Sprite {
         diff.normalize();
         diff.div(d);        // Weight by distance
         steer.add(diff);
-                  println("Tank "+ id + "sees: "+(String) view.keySet().stream().findFirst().get()+ " -------------------------------------------------------------------");
+                  //println("Tank "+ id + "sees: "+(String) view.keySet().stream().findFirst().get()+ " -------------------------------------------------------------------");
 
       }
     }

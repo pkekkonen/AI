@@ -93,7 +93,7 @@ class Team {
   void flock(Node target) {
     for (Tank t : tanks) {
       //t.moveTo(new PVector(target.x, target.y));
-      if (t.checkIfRotating(target)) {
+      if (t.checkIfRotating()) {
         t.flock(target);
       }
     }
