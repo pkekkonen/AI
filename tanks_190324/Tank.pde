@@ -1,6 +1,6 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -1331,7 +1331,7 @@ class Tank extends Sprite {
 
   
   //Denna metod påbörjar patrulleringen
-  void startPatrolling() {
+  void startPatrollingg() {
     new Thread() {
       public void run() {
         while (patrolling) {
@@ -1359,7 +1359,7 @@ class Tank extends Sprite {
     moveTo(vectorTarget);
   }
   
-  void keepPatrolling() {
+  void keepPatrollingg() {
 
     //Om det är en tank framför en så ska tanken återvända till senast besökta noden som en reträtt
     if (tankAhead) {
@@ -1383,7 +1383,7 @@ class Tank extends Sprite {
       moveTo(vectorTarget);
       patrolled.put(currentNode, -1);
       assignCostValue(new ArrayList<Node>(), currentNode);
-      startPatrolling();
+      startPatrollingg();
     }
 
     //Om tanken är på en ny plats så ska den omdeklarera vad som är dens nuvarande nod och dess senaste nod
@@ -1534,7 +1534,16 @@ class Tank extends Sprite {
           PVector near = new PVector(currX, currY);
           Node forwardNode = grid.getNearestNode(near);
           if(!(forwardNode.content() == null)) {
-            sighted.put(forwardNode.content().getName(), forwardNode.position);
+            if(forwardNode.content() instanceof Tank) {
+              if(((Tank)forwardNode.content()).team_id == 0)
+                sighted.put("friend", forwardNode.position);
+              else
+                sighted.put("enemy", forwardNode.position);
+            } else {
+                sighted.put(forwardNode.content().getName(), forwardNode.position);
+
+            }
+            
             return sighted;
           }
           currX += x;
@@ -1545,7 +1554,7 @@ class Tank extends Sprite {
 
   //*****************************
 
-  // Implementation of A* for finding the shortest path home
+  // Implementation of A* for finding the shortest path home //<>//
   // Inspired by pseudocode found at https://mat.uab.cat/~alseda/MasterOpt/AStar-Algorithm.pdf
   void findShortestPathHome() {
     Queue<AStarNode> openQueue = new PriorityQueue<AStarNode>(new HeuristicsComparator());
@@ -1743,19 +1752,19 @@ class Tank extends Sprite {
     PVector ali = align(flock);      // Alignment
     PVector coh = cohesion(flock);   // Cohesion
     PVector targ = seek_heur_target(target_from);
-    PVector tree = crash();
+    PVector avoidObstacles = avoidObstacles();
     // Arbitrarily weight these forces
     sep.mult(1.4);
     ali.mult(1.0);
     coh.mult(1.0);
     targ.mult(1.5);
-    tree.mult(50);
+    avoidObstacles.mult(50);
     // Add the force vectors to acceleration
     applyForce(sep);
     applyForce(ali);
     applyForce(coh);
     applyForce(targ);
-    applyForce(tree);
+    applyForce(avoidObstacles);
     println("positionen " + this.position + " hos tank " + this.id);
   }
   
@@ -1879,23 +1888,64 @@ class Tank extends Sprite {
     }
   }
   
-  // Crash
-  // check if tree is immenent
-  PVector crash () {
-    HashMap checkTree = this.checkForward();
-    if (checkTree.containsKey("tree")) {
-      PVector tree = (PVector) checkTree.get("tree");
-      float undesired = PVector.dist(tree, position);  // how long until tree
-      // Normalize desired and scale to maximum speed
-      if(undesired < 50) {
-          PVector steer = new PVector(750,750);
-          steer.normalize();
-          steer.mult(maxspeed);
-          steer.limit(maxforce);  // Limit to maximum steering force
-          return steer;
+  //// Crash
+  //// check if obstacle is immenent
+  //PVector avoidObstacless () {
+  //  HashMap view = this.checkForward();
+  //  if (!view.isEmpty() && !((String) view.keySet().stream().findFirst().get()).equals("Friend")) {
+  //    PVector obstacle = (PVector) view.values().stream().findFirst().get();
+  //    float undesired = PVector.dist(obstacle, position);  // how long until tree
+  //    // Normalize desired and scale to maximum speed
+  //    if(undesired < 50) {
+  //      PVector steer = PVector.sub(position,obstacle);
+  //        steer.normalize();
+  //        steer.mult(maxspeed);
+  //        steer.limit(maxforce);  // Limit to maximum steering force
+  //        println("Tank "+ id + "sees: "+(String) view.keySet().stream().findFirst().get()+ " -------------------------------------------------------------------");
+
+  //        return steer;
+  //    }
+  //  }
+  //  return new PVector(0,0);
+  //}
+  
+  
+   PVector avoidObstacles () {
+    PVector steer = new PVector(0,0,0);
+    HashMap view = this.checkForward();
+
+    if (!view.isEmpty() && !((String) view.keySet().stream().findFirst().get()).equals("friend")) {
+      PVector obstacle = (PVector) view.values().stream().findFirst().get();
+      float desiredseparation = this.diameter;
+      if(((String) view.keySet().stream().findFirst().get()).equals("tree"))
+        desiredseparation += allTrees[0].diameter+30; // TODO: OBS extremt FULKODAt
+      else
+        desiredseparation +=this.diameter; // TODO: OBS också FULKODAt :) cause that's how I roll
+
+      float d = PVector.dist(position,obstacle);
+      // If the distance is greater than 0 and less than an arbitrary amount (0 when you are yourself)
+      if ((d > 0) && (d < desiredseparation)) {
+        // Calculate vector pointing away from neighbor
+        PVector diff = PVector.sub(position,obstacle);
+        //println("diff " + diff);
+        diff.normalize();
+        diff.div(d);        // Weight by distance
+        steer.add(diff);
+                  println("Tank "+ id + "sees: "+(String) view.keySet().stream().findFirst().get()+ " -------------------------------------------------------------------");
+
       }
     }
-    return new PVector(0,0);
+
+    // As long as the vector is greater than 0
+    if (steer.mag() > 0) {
+      // Implement Reynolds: Steering = Desired - Velocity
+      steer.normalize();
+      steer.mult(maxspeed);
+      steer.sub(velocity);
+      steer.limit(maxforce);
+    }
+    //println(steer + " separate");
+    return steer;
   }
   
   /*

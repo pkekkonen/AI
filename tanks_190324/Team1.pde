@@ -32,7 +32,6 @@ class Team1 extends Team {
     }
 
     public void initialize() {
-      super.startPatrolling();
     }
 
     // Tanken meddelas om kollision med tree.
@@ -292,7 +291,6 @@ class Team1 extends Team {
 
       if (!started) {
         started = true;
-        super.startPatrolling();
         //moveTo(grid.getRandomNodePosition()); 
         //moveForward_state();
 
