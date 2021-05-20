@@ -4,7 +4,7 @@ class Tree extends Sprite {
   //String name;
    
   PImage img;
-  //PVector hitArea;
+  PVector hitArea;
   //float diameter, radius, m;
   //float m;
   
@@ -12,7 +12,7 @@ class Tree extends Sprite {
   Tree(int posx, int posy) {
     this.img = loadImage("tree01_v2.png");
     this.position = new PVector(posx, posy);
-    //this.hitArea = new PVector(posx, posy); // Kanske inte kommer att användas.
+    this.hitArea = new PVector(posx, posy); // Kanske inte kommer att användas.
     this.diameter = this.img.width/2;
     this.radius = diameter/2;
     //this.m = radius*.1;

@@ -1,6 +1,6 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -1356,7 +1356,7 @@ class Tank extends Sprite {
   
   HashMap checkForward() {
     Direction dir = this.getDirection();
-    HashMap<String, PVector> sighted = new HashMap<String, PVector>();
+    HashMap<Sprite, PVector> sighted = new HashMap<Sprite, PVector>();
       int x = 0, y = 0;
         if (dir == Direction.NORTH || dir == Direction.NORTHWEST || dir == Direction.NORTHEAST) {
           y = 50;
@@ -1375,22 +1375,28 @@ class Tank extends Sprite {
         currX += x;
         currY += y;
 //***********************************************************************************************************TODO Kolla om inom fiendebas
+        /*
         while(currX < width && currX > 0 && currY < height &&currY > 0) {
           PVector near = new PVector(currX, currY);
           Node forwardNode = grid.getNearestNode(near);
           if(!(forwardNode.content() == null)) {
-            if(forwardNode.content() instanceof Tank) {
-              if(((Tank)forwardNode.content()).team_id == 0)
-                sighted.put("friend", forwardNode.position);
-              else
-                sighted.put("enemy", forwardNode.position);
+              sighted.put(forwardNode.content(), forwardNode.position);
+              return sighted;
+            } */
+        while(currX < width && currX > 0 && currY < height &&currY > 0) {
+          PVector near = new PVector(currX, currY);
+          Node forwardNode = grid.getNearestNode(near);
+          if(!(forwardNode.content() == null)) {
+              sighted.put(forwardNode.content(), forwardNode.position);
+              return sighted;
             } else {
-                sighted.put(forwardNode.content().getName(), forwardNode.position);
-
+              for(Tree t : allTrees){
+                if(near == t.hitArea) {
+                  sighted.put(t, near);
+                  return sighted;
+                }
+              }
             }
-            
-            return sighted;
-          }
           currX += x;
           currY += y;
         }
@@ -1434,7 +1440,7 @@ class Tank extends Sprite {
   }
   
   
-    // We accumulate a new acceleration each time based on three rules
+    // We accumulate a new acceleration each time based on five rules
   void flock(Node target_from) {
     ArrayList<Tank> flock = new ArrayList(Arrays.asList(team.tanks));
     PVector sep = separate(flock);   // Separation
@@ -1586,25 +1592,25 @@ class Tank extends Sprite {
     PVector steer = new PVector(0,0,0);
     HashMap view = this.checkForward();
 
-    if (!view.isEmpty() && !((String) view.keySet().stream().findFirst().get()).equals("friend")) {
-      PVector obstacle = (PVector) view.values().stream().findFirst().get();
+    if (!view.isEmpty()) {
+      PVector obstacle_pos = (PVector) view.values().stream().findFirst().get();
+      Sprite obstacle = (Sprite) view.keySet().stream().findFirst().get();
       float desiredseparation = this.diameter;
-      if(((String) view.keySet().stream().findFirst().get()).equals("tree"))
-        desiredseparation += allTrees[0].radius+30; // TODO: OBS extremt FULKODAt
-      else
-        desiredseparation +=this.diameter; // TODO: OBS också FULKODAt :) cause that's how I roll
+      if(obstacle.getName() == "tree")
+        desiredseparation += obstacle.radius; //add atleast the radius of the tree to the tanks diameter
+      else if (obstacle.getName() == "tank")
+          desiredseparation +=this.diameter; // if it's a enemytank, ad atleast the diameter of the tank besides the tanks diameter          TODO: OBS också FULKODAt :) cause that's how I roll
 
-      float d = PVector.dist(position,obstacle);
+      float d = PVector.dist(position,obstacle_pos);
       // If the distance is greater than 0 and less than an arbitrary amount (0 when you are yourself)
       if ((d > 0) && (d < desiredseparation)) {
         // Calculate vector pointing away from neighbor
-        PVector diff = PVector.sub(position,obstacle);
+        PVector diff = PVector.sub(position,obstacle_pos);
         //println("diff " + diff);
         diff.normalize();
         diff.div(d);        // Weight by distance
         steer.add(diff);
-                  //println("Tank "+ id + "sees: "+(String) view.keySet().stream().findFirst().get()+ " -------------------------------------------------------------------");
-
+        println("Tank "+ id + "sees: "+ view.keySet().stream().findFirst().get()+ " -------------------------------------------------------------------");
       }
     }
 

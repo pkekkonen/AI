@@ -71,7 +71,6 @@ class Team {
         while (patrolling && !pause) {
           flock(target);
               println("TARGET :    "+target);
-
           //setHeading();
           for (Tank t : tanks) {
             if (!grid.getNearestNode(t.position).equals(t.currentNode) ) {
