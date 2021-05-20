@@ -1,6 +1,6 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -740,7 +740,7 @@ class Tank extends Sprite {
     this.acceleration.mult(0);
     count++;
     if (count % 10 == 0){
-      pause = true;
+  //    pause = true;
     }
   }
 
@@ -1441,6 +1441,7 @@ class Tank extends Sprite {
     PVector ali = align(flock);      // Alignment
     PVector coh = cohesion(flock);   // Cohesion
     PVector targ = seek_heur_target(target_from);
+    target = target_from;
     PVector avoidObstacles = avoidObstacles();
     // Arbitrarily weight these forces
     sep.mult(1.4);
@@ -1454,17 +1455,18 @@ class Tank extends Sprite {
     applyForce(coh);
     applyForce(targ);
     applyForce(avoidObstacles);
+    checkIfRotating();
     //println("positionen " + this.position + " hos tank " + this.id);
   }
   
   Boolean checkIfRotating() {
-      PVector pos = this.position;
-      PVector targ = pos.add(this.velocity);
+      PVector targ = PVector.add(this.position,this.velocity);
+      println("VELOCITY "+id+ " :  " +this.velocity);
+      println("POSITION "+id+ " :  " +this.position);
       println(targ);
-      println(targ.heading());
       this.hasTarget = true;
       //this.targetPosition.set(targ);
-      rotateTo(targ.heading());
+      rotateTo(PVector.add(this.position,this.velocity));
       return true;
   }
 
@@ -1552,7 +1554,7 @@ class Tank extends Sprite {
       sum.mult(maxspeed);
       PVector steer = PVector.sub(sum,velocity);
       steer.limit(maxforce);
-      return steer;
+      return steer; //<>//
     } else {
       return new PVector(0,0);
     }
@@ -1561,12 +1563,13 @@ class Tank extends Sprite {
   // Cohesion
   // For the average position (i.e. center) of all nearby tanks, calculate steering vector towards that position
   PVector cohesion (ArrayList<Tank> tanks) {
-    float neighbordist = this.radius*2;
+    float neighbordist = this.radius*2; //TODO: BORDE VARA HÖGRE
     PVector sum = new PVector(0,0);   // Start with empty vector to accumulate all positions
     int count = 0;
     for (Tank other : tanks) {
       float d = PVector.dist(position,other.position);
       if ((d > 0) && (d < neighbordist)) {
+        println("HÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄR");
         sum.add(other.position); // Add position
         count++;
       }

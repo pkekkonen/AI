@@ -64,13 +64,14 @@ class Team {
 
   void startPatrolling() {
     target = getNextTarget();
-    println(target);
     flock(target);
     patrolling = true;
     new Thread() {
       public void run() {
         while (patrolling && !pause) {
           flock(target);
+              println("TARGET :    "+target);
+
           //setHeading();
           for (Tank t : tanks) {
             if (!grid.getNearestNode(t.position).equals(t.currentNode) ) {
@@ -93,10 +94,10 @@ class Team {
   void flock(Node target) {
     for (Tank t : tanks) {
       //t.moveTo(new PVector(target.x, target.y));
-      if (t.checkIfRotating()) {
         t.flock(target);
-      }
+
     }
+    
   }
   
   Node getNextTarget() {
