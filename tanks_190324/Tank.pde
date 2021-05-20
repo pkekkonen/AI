@@ -1444,11 +1444,11 @@ class Tank extends Sprite {
     target = target_from;
     PVector avoidObstacles = avoidObstacles();
     // Arbitrarily weight these forces
-    sep.mult(1.4);
+    sep.mult(2.8);
     ali.mult(1.0);
     coh.mult(1.0);
     targ.mult(1.5);
-    avoidObstacles.mult(50);
+    avoidObstacles.mult(2);
     // Add the force vectors to acceleration
     applyForce(sep);
     applyForce(ali);
@@ -1563,7 +1563,7 @@ class Tank extends Sprite {
   // Cohesion
   // For the average position (i.e. center) of all nearby tanks, calculate steering vector towards that position
   PVector cohesion (ArrayList<Tank> tanks) {
-    float neighbordist = this.radius*2; //TODO: BORDE VARA HÖGRE
+    float neighbordist = 300; 
     PVector sum = new PVector(0,0);   // Start with empty vector to accumulate all positions
     int count = 0;
     for (Tank other : tanks) {
@@ -1590,7 +1590,7 @@ class Tank extends Sprite {
       PVector obstacle = (PVector) view.values().stream().findFirst().get();
       float desiredseparation = this.diameter;
       if(((String) view.keySet().stream().findFirst().get()).equals("tree"))
-        desiredseparation += allTrees[0].diameter+30; // TODO: OBS extremt FULKODAt
+        desiredseparation += allTrees[0].radius+30; // TODO: OBS extremt FULKODAt
       else
         desiredseparation +=this.diameter; // TODO: OBS också FULKODAt :) cause that's how I roll
 
