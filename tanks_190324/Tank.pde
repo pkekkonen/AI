@@ -1,6 +1,6 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -724,14 +724,22 @@ class Tank extends Sprite {
     this.targetHeading = this.heading; // Tanks har alltid en heading mot ett target.
     this.hasTarget = false;
   }
+    int count = 0;
 
   //**************************************************
   void updatePosition() {
     this.positionPrev.set(this.position); // spara senaste pos.
+    println("positionen " + this.position + " hos tank " + this.id);
+    println("acceleration " + this.acceleration + " hos tank " + this.id);
+    println("velocity " + this.velocity + " hos tank " + this.id);
     this.velocity.add(this.acceleration);
     this.velocity.limit(this.maxspeed);
     this.position.add(this.velocity);
     this.acceleration.mult(0);
+    count++;
+    if (count > 150){
+      pause = true;
+    }
   }
 
   //**************************************************
@@ -793,7 +801,7 @@ class Tank extends Sprite {
   //**************************************************
 
   void rotateTo(PVector coord) {
-    println("*** Tank["+ this.getId() + "].rotateTo(PVector) – ["+(int)coord.x+","+(int)coord.y+"]");
+    //println("*** Tank["+ this.getId() + "].rotateTo(PVector) – ["+(int)coord.x+","+(int)coord.y+"]");
 
     if (!isImmobilized) {
 
@@ -904,24 +912,6 @@ class Tank extends Sprite {
         // Om tanken är redo för handling och kan agera.
         if (!this.isImmobilized && this.isReady) {
 
-          if (isReporting && okayToGoNextStepHome) {
-            takeOneMoreStepHome();
-          } else if (isReportingInHomebase) {
-            // If we are done with reporting, go back to patrolling.
-
-            if (timer != null && timer.seconds() >= 3) {
-              println("TIME: "+ timer.seconds());
-
-              timer.stop();
-              timer = null;
-              lastVisitedNode=null;
-              isReportingInHomebase = false;
-              isReporting = false;
-              tankAhead = false;
-              //startPatrolling();
-              println("EFTER: ");
-            }
-          }
           /*
           if (patrolling) {
             keepPatrolling();
@@ -1306,136 +1296,6 @@ class Tank extends Sprite {
 
   //************************************************************************************
 
-  /*void getView() {
-   PVector viewForward = PVector.add(position, new PVector((float)Math.cos(heading), (float)Math.sin(heading)).mult(this.diameter*2));
-   PVector viewLeft =PVector.add(position, new PVector((float)Math.cos(heading-90), (float)Math.sin(heading-90)).mult(this.diameter));
-   PVector viewRight = PVector.add(position, new PVector((float)Math.cos(heading+90), (float)Math.sin(heading+90)).mult(this.diameter));
-   ArrayList<Node> view = new ArrayList<Node>();
-   view.add(grid.getNearestNode(position));
-   view.add(grid.getNearestNode(viewForward));
-   view.add(grid.getNearestNode(viewLeft));
-   view.add(grid.getNearestNode(viewRight));
-   for (Node n : view) {
-   //println("get view" + n.x + n.y);
-   assignCostValue(new ArrayList<Node>(), n);
-   }
-   }*/
-
-  //Denna metod sätter tankens status till att den ska tillbaka till basen
-  void report() {
-    isReporting = true;
-    tankAhead = false;
-
-    findShortestPathHome();
-  }
-
-  
-  //Denna metod påbörjar patrulleringen
-  void startPatrollingg() {
-    new Thread() {
-      public void run() {
-        while (patrolling) {
-          try {
-            //flock(target);
-            Thread.sleep(1000);
-          }
-          catch(InterruptedException e) {
-            continue;
-          }
-        }
-      }
-    }
-    .start();
-    patrolling = true;
-    currentNode = grid.getNearestNode(position); //Hämtar noden som är närmast tankens nuvarande position
-    if (lastVisitedNode == null) {
-      lastVisitedNode = currentNode;
-    }
-  
-    assignCostValue(new ArrayList<Node>(), currentNode);
-    patrolling = true;
-    Node target = getNextTarget();
-    vectorTarget = new PVector(target.x, target.y);
-    moveTo(vectorTarget);
-  }
-  
-  void keepPatrollingg() {
-
-    //Om det är en tank framför en så ska tanken återvända till senast besökta noden som en reträtt
-    if (tankAhead) {
-      if (collidedWithTank) {
-        vectorTarget = new PVector(lastVisitedNode.x, lastVisitedNode.y);
-        moveTo(vectorTarget);
-        collidedWithTank = false;
-      }
-      patrolling = false;
-      isReporting = true;
-      report();
-      return;      
-
-      //Om tanken kolliderat med ett träd så ska den gå tillbaka till senast besökta noden och ge noden som trädet sitter på ett värde som aldrig gör den mer värd än andra noder
-    } else if (collidedWithTree) {
-      currentNode = grid.getNearestNode(position);
-      patrolled.put(target, Integer.MAX_VALUE);
-      vectorTarget = new PVector(lastVisitedNode.x, lastVisitedNode.y);
-      collidedWithTree = false;
-      collidedWithTank = false;
-      moveTo(vectorTarget);
-      patrolled.put(currentNode, -1);
-      assignCostValue(new ArrayList<Node>(), currentNode);
-      startPatrollingg();
-    }
-
-    //Om tanken är på en ny plats så ska den omdeklarera vad som är dens nuvarande nod och dess senaste nod
-    //Sätt nuvarande noden i listan över patrullerade noder, med värdet -1 för att signalera att den inte är uträknad
-    if (grid.getNearestNode(position) != currentNode) {
-      lastVisitedNode.isEmpty = true;
-      lastVisitedNode = currentNode;
-      currentNode = grid.getNearestNode(position);
-      patrolled.put(currentNode, -1);
-      assignCostValue(new ArrayList<Node>(), currentNode);
-      target = getNextTarget();
-      vectorTarget = new PVector(target.x, target.y);
-      moveTo(vectorTarget);
-    }
-  }
-  
-  //Denna metod kollar en nods alla grannar, om nån av dem är opatrullerad får noden värdet 1, då den är 1 steg från ett mål
-  void assignCostValue(ArrayList<Node> finished, Node n) {
-    ArrayList<Node> neighbors = getNeighboringNodes(n);
-    float r = this.diameter/2;
-    for (Node temp : neighbors) {
-      if (finished.contains(temp)) {
-        continue;
-      }
-      if (!patrolled.containsKey(temp)) {
-        if ((temp.position.y+r >= height) || (temp.position.y-r <= 0) ||
-          (temp.position.x+r >= width) || (temp.position.x-r <= 0) ) { 
-          patrolled.put(temp, Integer.MAX_VALUE);
-        } else {
-          patrolled.put(n, 1);
-          backPropagate(n, 1);
-        }
-      } else {
-        if (!finished.contains(n)) {
-          finished.add(n);
-        }
-
-        assignCostValue(finished, temp);
-      }
-    }
-  } 
-
-  //Denna metod kollar alla grannar hos en nod och kollar om deras värde är dess värde är dess värde plus 1, eller lägre, och ändrar om inte.
-  void backPropagate(Node n, int i) {
-    for (Node temp : getNeighboringNodes(n)) {
-      if (patrolled.containsKey(temp) && (patrolled.get(temp) == -1 || (patrolled.get(temp) > i+1 && patrolled.get(temp) != Integer.MAX_VALUE))) {
-        patrolled.put(temp, i+1); 
-        backPropagate(temp, i+1);
-      }
-    }
-  }
-
   //Returnerar alla närliggande noder till noden current
   ArrayList<Node> getNeighboringNodes(Node current) {
     ArrayList<Node> neighbors = new ArrayList<Node>(); 
@@ -1451,23 +1311,6 @@ class Tank extends Sprite {
     return neighbors;
   }
 
-  //Returnerar nästa mål baserat på vilken av noderna som har lägst värde, om noden ej är patrullerad så returneras den direkt
-  //Slumpfaktor är tillsatt för att testa att agenten agerar korrekt i olika rutter
-  Node getNextTarget() {
-    Node target = null; 
-    ArrayList<Node> neighbors = getNeighboringNodes(currentNode); 
-    Collections.shuffle(neighbors); 
-    for (Node temp : neighbors) {
-      if (!patrolled.containsKey(temp)) {
-        return temp;
-      }
-      if ((target == null || patrolled.get(temp) < patrolled.get(target)) && patrolled.get(temp) > -1) {
-        target = temp;
-      }
-    }
-    checkEnvironment(); 
-    return target;
-  }
   void showGrid() {
     for (int i = 0; i < grid.nodes.length; i++) {
       for (int j = 0; j < grid.nodes[i].length; j++) {
@@ -1551,101 +1394,6 @@ class Tank extends Sprite {
         }
     return sighted;
   }
-
-  //*****************************
-
-  // Implementation of A* for finding the shortest path home //<>//
-  // Inspired by pseudocode found at https://mat.uab.cat/~alseda/MasterOpt/AStar-Algorithm.pdf
-  void findShortestPathHome() {
-    Queue<AStarNode> openQueue = new PriorityQueue<AStarNode>(new HeuristicsComparator());
-    LinkedList<AStarNode> closedList = new LinkedList<AStarNode>(); 
-    openQueue.add(new AStarNode(currentNode, calculateHeuristics(currentNode), 0, null)); //adding start node
-    AStarNode current;
-
-    while (!openQueue.isEmpty()) {
-      current = openQueue.poll();
-      closedList.add(current);
-
-      if (isNodeInHomeBase(current.node)) {
-
-        //WE ARE DONE
-        LinkedList<Node> finalPath = new LinkedList<Node>(); // the nodes which we actually move between
-        LinkedList<Node> actualFinalPath = new LinkedList<Node>(); // the nodes that makes up the whole path home
-        AStarNode currNode = closedList.getLast();
-
-        //We use the direction to check if the tank can go straigth to a further node without stopping on nodes between
-        Direction dir = null;
-        Direction prevDir = null;
-
-        // The lastDir variable is used to make sure that we get into the homebase
-        lastDir = getDirection(currNode.node, currNode.visitedThrough.node);
-
-        while (currNode != null) {
-          prevDir = dir;
-          if (currNode.visitedThrough != null) {
-            dir = getDirection(currNode.node, currNode.visitedThrough.node);
-          }
-          if (dir == null ||  dir != prevDir) { 
-            finalPath.addFirst(currNode.node);
-          }
-          actualFinalPath.addFirst(currNode.node);               
-          currNode = currNode.visitedThrough;
-        }
-        pathHome = finalPath;
-
-        return;
-      }
-
-      // få närliggande som vi känner till från current 
-      // ska ligga i patrolled
-      List<Node> children = grid.getNodesNeighbours(current.node);
-
-      for (Node n : children) {
-        if (patrolled.containsKey(n) && !(n.content.getName() == "tree")) {
-          double gValue = calculateGValue(current, n);
-          double hValue = calculateHeuristics(n);
-          double fValue = gValue+hValue;
-
-          //Does openQueue contain the current node? If it does and the heuristic for that in the queue is lower, do nothing. Else, add this node heuristic instead
-          AStarNode nodeFromOpenQueue = findAStarNode(n, openQueue);
-          if (!closedList.contains(n) && nodeFromOpenQueue != null ) {
-            if (nodeFromOpenQueue.gValue >= gValue) {
-              //Updating value, must remove and reinsert element so the priority is updated
-              openQueue.remove(nodeFromOpenQueue);
-              nodeFromOpenQueue.fValue = fValue;
-              nodeFromOpenQueue.gValue = gValue;
-              nodeFromOpenQueue.visitedThrough = current;
-
-              openQueue.add(nodeFromOpenQueue);
-            }
-          } else {
-            openQueue.add(new AStarNode(n, fValue, gValue, current));
-          }
-        }
-      }
-    }
-  }
-
-  // Used to optimize the time it takes to travel the shortest path home
-  Direction getDirection(Node a, Node b) {
-    if (a.x == b.x && a.y > b.y) {
-      return Direction.NORTH;
-    } else if (a.x < b.x && a.y > b.y) {
-      return Direction.NORTHEAST;
-    } else if (a.x < b.x && a.y == b.y) {
-      return Direction.EAST;
-    } else if (a.x < b.x && a.y < b.y) {
-      return Direction.SOUTHEAST;
-    } else if (a.x == b.x && a.y < b.y) {
-      return Direction.SOUTH;
-    } else if (a.x > b.x && a.y < b.y) {
-      return Direction.SOUTHWEST;
-    } else if (a.x > b.x && a.y == b.y) {
-      return Direction.WEST;
-    } else {
-      return Direction.NORTHWEST;
-    }
-  }
   
     Direction getDirection() {
     float heading = this.getHeadingInDegrees();
@@ -1669,48 +1417,6 @@ class Tank extends Sprite {
     }
   }
 
-  // Returns the AStarNode in queue containing the Node node.
-  // Returns null if no such AStarNode exists.
-  AStarNode findAStarNode(Node node, Queue<AStarNode> queue) {
-    for (AStarNode n : queue) {
-      if (n.node.equals(node))
-        return n;
-    }
-    return null;
-  }
-
-  // Moves to the next node in the pathHome list that we got from findShortestPathHome
-  void takeOneMoreStepHome() {
-
-    if (!pathHome.isEmpty()) {
-      Node next = pathHome.poll();
-      okayToGoNextStepHome = false;
-
-      if (pathHome.isEmpty()) {
-
-        //This fun part is used to check how much further we need to move in x and y direction to get into the homebase
-        int x = 0, y = 0;
-        if (lastDir == Direction.NORTH || lastDir == Direction.NORTHWEST || lastDir == Direction.NORTHEAST) {
-          y = 50;
-        } else if (lastDir == Direction.SOUTH || lastDir == Direction.SOUTHWEST || lastDir == Direction.SOUTHEAST) {
-          y = -50;
-        } 
-
-        if (lastDir == Direction.EAST || lastDir == Direction.NORTHEAST || lastDir == Direction.SOUTHEAST) {
-          x = -50;
-        } else if (lastDir == Direction.WEST || lastDir == Direction.SOUTHWEST || lastDir == Direction.NORTHWEST) {
-          x = 50;
-        } 
-
-        float a = next.x+x;
-        float b = next.y+y;
-        currentNode = next;
-        moveTo(next.x+x, next.y+y);
-      } else {
-        moveTo(next.x, next.y);
-      }
-    }
-  }  
 
   // Check if the Node current is within homebase
   boolean isNodeInHomeBase(Node current) {
@@ -1722,25 +1428,6 @@ class Tank extends Sprite {
       return true;
     } else {
       return false;
-    }
-  }
-
-  // real distance from start to currentNode
-  double calculateGValue(AStarNode a, Node b) {
-    double prevDist = a.gValue;
-    double newDist = Math.sqrt(Math.pow(a.node.x-b.x, 2)+Math.pow(a.node.y-b.y, 2));
-    return prevDist + newDist;
-  }
-
-  double calculateHeuristics(Node n) {
-    //If we think of the game plan as a coordinate system where the point (team.homebase_x+team.homebase_width, team.homebase_y+team.homebase_height) is origo,
-    //then the following if-statements determines whether the Node n is in the first, third or fourth quadrant and calculates accordingly
-    if (n.x <= team.homebase_x+team.homebase_width) { // n is in the third quadrant
-      return n.y-(team.homebase_y+team.homebase_height);
-    } else if (n.y <= team.homebase_y+team.homebase_height) { // n is in the first quadrant
-      return n.x-(team.homebase_x+team.homebase_width);
-    } else { // n is in the fourth quadrant; use euclidean distance to calculate distance to "origo"
-      return Math.sqrt(Math.pow((team.homebase_x+team.homebase_width)-n.x, 2)+Math.pow((team.homebase_y+team.homebase_height)-n.y, 2));
     }
   }
   
@@ -1765,11 +1452,10 @@ class Tank extends Sprite {
     applyForce(coh);
     applyForce(targ);
     applyForce(avoidObstacles);
-    println("positionen " + this.position + " hos tank " + this.id);
+    //println("positionen " + this.position + " hos tank " + this.id);
   }
   
   Boolean checkIfRotating(Node target_from) {
-    println("target_from_teams " + target_from + " current target " + this.target + " hos tank " + this.id);
       this.target = target_from;
       this.hasTarget = true;
       this.targetPosition.set(target_from.position);
@@ -1888,28 +1574,6 @@ class Tank extends Sprite {
     }
   }
   
-  //// Crash
-  //// check if obstacle is immenent
-  //PVector avoidObstacless () {
-  //  HashMap view = this.checkForward();
-  //  if (!view.isEmpty() && !((String) view.keySet().stream().findFirst().get()).equals("Friend")) {
-  //    PVector obstacle = (PVector) view.values().stream().findFirst().get();
-  //    float undesired = PVector.dist(obstacle, position);  // how long until tree
-  //    // Normalize desired and scale to maximum speed
-  //    if(undesired < 50) {
-  //      PVector steer = PVector.sub(position,obstacle);
-  //        steer.normalize();
-  //        steer.mult(maxspeed);
-  //        steer.limit(maxforce);  // Limit to maximum steering force
-  //        println("Tank "+ id + "sees: "+(String) view.keySet().stream().findFirst().get()+ " -------------------------------------------------------------------");
-
-  //        return steer;
-  //    }
-  //  }
-  //  return new PVector(0,0);
-  //}
-  
-  
    PVector avoidObstacles () {
     PVector steer = new PVector(0,0,0);
     HashMap view = this.checkForward();
@@ -1947,90 +1611,7 @@ class Tank extends Sprite {
     //println(steer + " separate");
     return steer;
   }
-  
-  /*
-  void applyBehaviors(Tank[] tanks) {
-     PVector separateForce = separate(tanks);
-     PVector seekForce = seek(targetPosition);
-     separateForce.mult(2);
-     seekForce.mult(1);
-     applyForce(separateForce);
-     applyForce(seekForce); 
-  }
-  
-    // A method that calculates a steering force towards a target
-  // STEER = DESIRED MINUS VELOCITY
-  PVector seek(PVector target) {
-    PVector desired = PVector.sub(target,position);  // A vector pointing from the position to the target
-    
-    // Normalize desired and scale to maximum speed
-    desired.normalize();
-    desired.mult(maxspeed);
-    // Steering = Desired minus velocity
-    PVector steer = PVector.sub(desired,velocity);
-    steer.limit(maxforce);  // Limit to maximum steering force
-    
-    return steer;
-  }
-
-  // Separation
-  // Method checks for nearby tanks and steers away
-  PVector separate (Tank[] tanks) {
-    float desiredseparation = radius*2;
-    PVector sum = new PVector();
-    int count = 0;
-    // For every boid in the system, check if it's too close
-    for (Tank other : tanks) {
-      float d = PVector.dist(position, other.position);
-      // If the distance is greater than 0 and less than an arbitrary amount (0 when you are yourself)
-      if ((d > 0) && (d < desiredseparation)) {
-        // Calculate vector pointing away from neighbor
-        PVector diff = PVector.sub(position, other.position);
-        diff.normalize();
-        diff.div(d);        // Weight by distance
-        sum.add(diff);
-        count++;            // Keep track of how many
-      }
-    }
-    // Average -- divide by how many
-    if (count > 0) {
-      sum.div(count);
-      // Our desired vector is the average scaled to maximum speed
-      sum.normalize();
-      sum.mult(maxspeed);
-      // Implement Reynolds: Steering = Desired - Velocity
-      sum.sub(velocity);
-      sum.limit(maxforce);
-    }
-    return sum;
-  }
-  */
-
-  // container used for the A* algorithm
-  class AStarNode {
-    Node node;
-    double fValue;
-    double gValue;
-    AStarNode visitedThrough;
-
-    AStarNode(Node node, double fValue, double gValue, AStarNode visitedThrough) {
-      this.node = node;
-      this.fValue = fValue;
-      this.gValue = gValue;
-      this.visitedThrough = visitedThrough;
-    }
-    @Override
-      public String toString() {
-      return "(" + node.col +  ", "+ node.row  + ")" + " + " + "(" +fValue+ "), ";
-    }
-  }
-
-  class HeuristicsComparator implements Comparator<AStarNode> {
-    @Override
-      public int compare(AStarNode n1, AStarNode n2) {
-      return n1.fValue > n2.fValue ? 1 : -1;
-    }
-  }
+ 
 
   // Got from https://forum.processing.org/one/topic/timer-in-processing.html. The class is used to make sure the tank stays still for three seconds after reporting to its homebase 
   class StopWatchTimer {

@@ -105,7 +105,7 @@ void setup(){
   // Team0
   team0_tank0_startpos = new PVector(50, 50);
   team0_tank1_startpos = new PVector(50, 150);
-  team0_tank2_startpos = new PVector(50, 250);
+  team0_tank2_startpos = new PVector(50, height-50);
 
   // Team1
   team1_tank0_startpos = new PVector(width-50, height-250);
