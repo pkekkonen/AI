@@ -1361,15 +1361,15 @@ class Tank extends Sprite {
     HashMap<Sprite, PVector> sighted = new HashMap<Sprite, PVector>();
       int x = 0, y = 0;
         if (dir == Direction.NORTH || dir == Direction.NORTHWEST || dir == Direction.NORTHEAST) {
-          y = 25;
+          y = 50;
         } else if (dir == Direction.SOUTH || dir == Direction.SOUTHWEST || dir == Direction.SOUTHEAST) {
-          y = -25;
+          y = -50;
         } 
 
         if(dir == Direction.WEST || dir == Direction.SOUTHWEST || dir == Direction.NORTHWEST) {
-          x = -25;
+          x = -50;
         } else if (dir == Direction.EAST || dir == Direction.NORTHEAST || dir == Direction.SOUTHEAST) {
-          x = 25;
+          x = 50;
         } 
         float currX = currentNode.x;
         float currY = currentNode.y;
@@ -1399,11 +1399,16 @@ class Tank extends Sprite {
                 float diff = PVector.angleBetween(comparision, velocity);*/
                 //println("Herebe curr x " + currX + " t.position.x +t-radius " +(t.position.x + t.radius));
                 //println("Herebe curr y " + currY + " t.position.y +t-radius " +(t.position.y + t.radius));
-                 if(currX < (t.position.x + t.radius) && currY < (t.position.y + t.radius) &&
-                       currX > (t.position.x-t.radius) && currY > (t.position.y-t.radius)){
+                // if(currX < (t.position.x + t.radius) && currY < (t.position.y + t.radius) &&
+                //       currX > (t.position.x-t.radius) && currY > (t.position.y-t.radius)){
+                  if(t.checkCollision(this, near)) {
                           sighted.put(t, near);
-                          println(sighted);
-                          pause = true;
+                          /*
+                          if (this.team_id == 0){
+                              println(sighted);
+                              pause = true;
+                          }
+                          */
                           return sighted;
                           }
                         }
