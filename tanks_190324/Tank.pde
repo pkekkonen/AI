@@ -97,6 +97,7 @@ class Tank extends Sprite {
   private ArrayList<Sensor> sensors = new ArrayList<Sensor>();
 
   protected ArrayList<Sensor> mySensors = new ArrayList<Sensor>();
+  float periphery = PI/314;
 
   // List of traversed areas
   private HashMap<Node, Integer> patrolled = new HashMap<Node, Integer>();
@@ -729,10 +730,10 @@ class Tank extends Sprite {
   //**************************************************
   void updatePosition() {
     this.positionPrev.set(this.position); // spara senaste pos.
-    if (this.team_id == 0) {
+    if (this.team_id == 0) {/*
       println("positionen " + this.position + " hos tank " + this.id);
       println("acceleration " + this.acceleration + " hos tank " + this.id);
-      println("velocity " + this.velocity + " hos tank " + this.id);
+      println("velocity " + this.velocity + " hos tank " + this.id);*/
     }
     this.velocity.add(this.acceleration);
     this.velocity.limit(this.maxspeed);
@@ -1249,6 +1250,7 @@ class Tank extends Sprite {
       //  }
       //}
     }
+    arc(0, 0, 750*2, 750*2, -periphery, periphery);
 
     popMatrix();  
 
@@ -1353,21 +1355,21 @@ class Tank extends Sprite {
         }
       }
     }
-  
+
   HashMap checkForward() {
     Direction dir = this.getDirection();
     HashMap<Sprite, PVector> sighted = new HashMap<Sprite, PVector>();
       int x = 0, y = 0;
         if (dir == Direction.NORTH || dir == Direction.NORTHWEST || dir == Direction.NORTHEAST) {
-          y = 50;
+          y = 25;
         } else if (dir == Direction.SOUTH || dir == Direction.SOUTHWEST || dir == Direction.SOUTHEAST) {
-          y = -50;
+          y = -25;
         } 
 
         if(dir == Direction.WEST || dir == Direction.SOUTHWEST || dir == Direction.NORTHWEST) {
-          x = -50;
+          x = -25;
         } else if (dir == Direction.EAST || dir == Direction.NORTHEAST || dir == Direction.SOUTHEAST) {
-          x = 50;
+          x = 25;
         } 
         float currX = currentNode.x;
         float currY = currentNode.y;
@@ -1391,17 +1393,26 @@ class Tank extends Sprite {
               return sighted;
             } else {
               for(Tree t : allTrees){
-                if(near == t.hitArea) {
-                  sighted.put(t, near);
-                  return sighted;
-                }
-              }
+                /*
+                PVector comparision = PVector.sub(t.position, near);
+                float d = PVector.dist(near, t.position);
+                float diff = PVector.angleBetween(comparision, velocity);*/
+                //println("Herebe curr x " + currX + " t.position.x +t-radius " +(t.position.x + t.radius));
+                //println("Herebe curr y " + currY + " t.position.y +t-radius " +(t.position.y + t.radius));
+                 if(currX < (t.position.x + t.radius) && currY < (t.position.y + t.radius) &&
+                       currX > (t.position.x-t.radius) && currY > (t.position.y-t.radius)){
+                          sighted.put(t, near);
+                          println(sighted);
+                          pause = true;
+                          return sighted;
+                          }
+                        }
+                      }
+                    currX += x;
+                    currY += y;
+                  }
+              return sighted;
             }
-          currX += x;
-          currY += y;
-        }
-    return sighted;
-  }
   
     Direction getDirection() {
     float heading = this.getHeadingInDegrees();
@@ -1448,6 +1459,7 @@ class Tank extends Sprite {
     PVector coh = cohesion(flock);   // Cohesion
     PVector targ = seek_heur_target(target_from);
     target = target_from;
+                  //println("TARGET in tank :    "+target);
     PVector avoidObstacles = avoidObstacles();
     // Arbitrarily weight these forces
     sep.mult(2.8);
@@ -1467,9 +1479,9 @@ class Tank extends Sprite {
   
   Boolean checkIfRotating() {
       PVector targ = PVector.add(this.position,this.velocity);
-      println("VELOCITY "+id+ " :  " +this.velocity);
-      println("POSITION "+id+ " :  " +this.position);
-      println(targ);
+      //println("VELOCITY "+id+ " :  " +this.velocity);
+      //println("POSITION "+id+ " :  " +this.position);
+      //println(targ);
       this.hasTarget = true;
       //this.targetPosition.set(targ);
       rotateTo(PVector.add(this.position,this.velocity));
@@ -1575,7 +1587,7 @@ class Tank extends Sprite {
     for (Tank other : tanks) {
       float d = PVector.dist(position,other.position);
       if ((d > 0) && (d < neighbordist)) {
-        println("HÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄR");
+        //println("HÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄR");
         sum.add(other.position); // Add position
         count++;
       }
@@ -1598,9 +1610,12 @@ class Tank extends Sprite {
       float desiredseparation = this.diameter;
       if(obstacle.getName() == "tree")
         desiredseparation += obstacle.radius; //add atleast the radius of the tree to the tanks diameter
-      else if (obstacle.getName() == "tank")
-          desiredseparation +=this.diameter; // if it's a enemytank, ad atleast the diameter of the tank besides the tanks diameter          TODO: OBS också FULKODAt :) cause that's how I roll
-
+      else {
+          Tank other = (Tank) obstacle;
+          if(other.team_id != this.team_id) {
+              desiredseparation +=this.diameter; // if it's a enemytank, ad atleast the diameter of the tank besides the tanks diameter          TODO: OBS också FULKODAt :) cause that's how I roll
+          }
+      }
       float d = PVector.dist(position,obstacle_pos);
       // If the distance is greater than 0 and less than an arbitrary amount (0 when you are yourself)
       if ((d > 0) && (d < desiredseparation)) {
@@ -1610,9 +1625,10 @@ class Tank extends Sprite {
         diff.normalize();
         diff.div(d);        // Weight by distance
         steer.add(diff);
-        println("Tank "+ id + "sees: "+ view.keySet().stream().findFirst().get()+ " -------------------------------------------------------------------");
+        println("Tank "+ id + "sees: "+ obstacle.getName()+ " at " + obstacle_pos + " -------------------------------------------------------------------");
       }
     }
+
 
     // As long as the vector is greater than 0
     if (steer.mag() > 0) {

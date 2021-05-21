@@ -68,9 +68,9 @@ class Team {
     patrolling = true;
     new Thread() {
       public void run() {
-        while (patrolling && !pause) {
+        while (patrolling) {
           flock(target);
-              println("TARGET :    "+target);
+              //println("TARGET :    "+target);
           //setHeading();
           for (Tank t : tanks) {
             if (!grid.getNearestNode(t.position).equals(t.currentNode) ) {
@@ -83,6 +83,7 @@ class Team {
           }
           if (patrolled.containsKey(target)) {
             target = getNextTarget();
+              //println("TARGET :    "+target);
           }
         }
       }
