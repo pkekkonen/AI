@@ -1169,8 +1169,11 @@ class Tank extends Sprite {
       // Meddela tanken om att kollision med den andra tanken gjorts.
       message_collision(other);
     }
+    checkForward();
+    /*
     checkTankForward(other);
     checkTankForward();
+    */
   }
 
   void setNode() {
@@ -1330,6 +1333,7 @@ class Tank extends Sprite {
   }
 
   //Kollar om någon av fiendetankerna är framför tankens synfält
+  /*
   void checkTankForward(Tank other) {
     if (!enemyNodes.contains(grid.getNearestNode(position))) {
       return;
@@ -1355,7 +1359,7 @@ class Tank extends Sprite {
           tankAhead = true;
         }
       }
-    }
+    }*/
 
   HashMap checkForward() {
     HashMap<Sprite, PVector> sighted = new HashMap<Sprite, PVector>();
@@ -1364,16 +1368,39 @@ class Tank extends Sprite {
     
 //***********************************************************************************************************TODO Kolla om inom fiendebas
 
+
+// https://stackoverflow.com/questions/40779343/java-loop-through-all-pixels-in-a-2d-circle-with-center-x-y-and-radius
               for(Sprite s : allEnemiesAndTrees){   
-                for(int i = 0; i < s.radius; i++){
-                  PVector comparision = PVector.sub(s.position, this.position);
-                  float d = PVector.dist(this.position, s.position);
-                  float diff = PVector.angleBetween(comparision, this.velocity);
-                    if (diff < periphery && d > 0 && d < sightDistance) {
-                       sighted.put(s, position); 
-                       return sighted;
+                for (float i = s.position.y-s.radius; i < s.position.y+s.radius; i++) {
+                    for (float j = s.position.x; (Math.pow((j - s.position.x), 2) + Math.pow((i - s.position.y), 2)) <= Math.pow(s.radius, 2); j--) {
+                        PVector comp = new PVector(i, j);
+                        PVector comparision = PVector.sub(comp, this.position);
+                        float d = PVector.dist(this.position, s.position);
+                        float diff = PVector.angleBetween(comparision, this.velocity);
+                          if (diff < periphery && d > 0 && d < sightDistance) {
+                             sighted.put(s, comp); 
+                             if(s.getName() == "tree") {
+                                 println(sighted);
+                                 pause = true;
+                              }
+                             return sighted;
+                          }
+                        }
+                    for (float j = s.position.x +1; (j-s.position.x)*(j-s.position.x) + (i-s.position.y)*(i-s.position.y) <= s.radius*s.radius; j++) {
+                        PVector comp = new PVector(i, j);
+                        PVector comparision = PVector.sub(comp, this.position);
+                        float d = PVector.dist(this.position, s.position);
+                        float diff = PVector.angleBetween(comparision, this.velocity);
+                          if (diff < periphery && d > 0 && d < sightDistance) {
+                             sighted.put(s, comp); 
+                             if(s.getName() == "tree") {
+                                 println(sighted + "  " + this.id);
+                                 pause = true;
+                              }
+                             return sighted;
+                          }
                     }
-                }
+                  }
               }
               return sighted;
   }
@@ -1550,7 +1577,7 @@ class Tank extends Sprite {
       sum.mult(maxspeed);
       PVector steer = PVector.sub(sum,velocity);
       steer.limit(maxforce);
-      return steer; //<>//
+      return steer; //<>// //<>//
     } else {
       return new PVector(0,0);
     }
@@ -1577,7 +1604,7 @@ class Tank extends Sprite {
       return new PVector(0,0);
     }
   }
-   //<>//
+  
    PVector avoidObstacles () {
     PVector steer = new PVector(0,0,0);
     HashMap view = this.checkForward();
