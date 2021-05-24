@@ -1,4 +1,4 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
 import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
@@ -1220,10 +1220,8 @@ class Tank extends Sprite {
     fill(this.team.getColor(), 255); 
     this.turret.display();
   }
-
   //**************************************************
   final void display() {
-
     imageMode(CENTER);
     pushMatrix();
     translate(this.position.x, this.position.y);
@@ -1252,7 +1250,7 @@ class Tank extends Sprite {
     }
     
     arc(0, 0, sightDistance*2, sightDistance*2, -periphery, periphery);
-
+    
 
     popMatrix();  
 
@@ -1295,7 +1293,7 @@ class Tank extends Sprite {
 
       if (this.hasTarget) {
         strokeWeight(1);
-        line(this.position.x, this.position.y, this.targetPosition.x, targetPosition.y);
+        line(this.position.x, this.position.y, this.velocity.x, velocity.y);
       }
     }
   }
@@ -1361,9 +1359,11 @@ class Tank extends Sprite {
   
   HashMap checkForward() {
     HashMap<Sprite, PVector> sighted = new HashMap<Sprite, PVector>();
+    
+    float kValue = (position.x-velocity.x+velocity.y)/position.y;
 
     for (Tree t : allTrees) {
-      if (checkIfSeesSprite(t)) {
+      if (checkIfSeesSprite(t, kValue)) {
         sighted.put(t, t.position);
         return sighted;
       }
@@ -1371,19 +1371,40 @@ class Tank extends Sprite {
     return sighted;
   }
 
-  Boolean checkIfSeesSprite(Sprite other) {
 
-    PVector comparison = PVector.sub(other.position, position);
+  Boolean checkIfSeesSprite(Sprite other, float kValue) {
+    float circleX = other.position.y;
+    float circleY = other.position.x;
 
-    // How far is it
-    float d = PVector.dist(position, other.position);
+    float distance = (kValue*circleX+circleY)/kValue-other.radius;
+    
+    float perpendicularLineSlope = -1/kValue;
+    
+    float intersectionPoint = circleY-perpendicularLineSlope*circleX;
 
-    // What is the angle between the other boid and this one's current direction
-    float diff = PVector.angleBetween(comparison, velocity);
+    float nearestX1 = circleX + sqrt(other.radius/(1+perpendicularLineSlope*perpendicularLineSlope));
+    float nearestY1 = perpendicularLineSlope* nearestX1+intersectionPoint;
+    
+    float nearestX2 = circleX - sqrt(other.radius/(1+perpendicularLineSlope*perpendicularLineSlope));
+    float nearestY2 = perpendicularLineSlope* nearestX2+intersectionPoint;
+    
+    PVector comparison1 = PVector.sub(new PVector(nearestY1, nearestX1), position);
+    PVector comparison2 = PVector.sub(new PVector(nearestY2, nearestX2), position);
+    
+        // What is the angle between the other boid and this one's current direction
+    float diff1 = PVector.angleBetween(comparison1, velocity);
+    float diff2 = PVector.angleBetween(comparison2, velocity);
 
-    if (diff < periphery && d >= 0 && d < sightDistance) {
+    float diff = (diff1>diff2 ? diff2:diff1);
+
+    if (diff < periphery && distance >= 0 && distance < sightDistance) {
+
+
+            //  print(id+" -----------------------------------------------------------------------------------------------------------------------");
+
       return true;
-    }
+    } 
+
     return false;
   }
   
