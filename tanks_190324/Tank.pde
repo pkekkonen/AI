@@ -1,4 +1,4 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
 import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
@@ -16,7 +16,8 @@ class Tank extends Sprite {
   PVector acceleration;
   PVector velocity;
   //PVector position; //Sprite
-
+  float periphery = PI/314;
+  float sightDistance = 2000;
   float rotation;
   float rotation_speed;
 
@@ -1249,6 +1250,9 @@ class Tank extends Sprite {
       //  }
       //}
     }
+    
+    arc(0, 0, sightDistance*2, sightDistance*2, -periphery, periphery);
+
 
     popMatrix();  
 
@@ -1341,6 +1345,7 @@ class Tank extends Sprite {
     }
   
     //Kollar om någon av fiendetankerna är framför tankens synfält
+    //TODO: FIX
   void checkTankForward() {
     HashMap sighted = checkForward();
     if(sighted.containsKey("tank")) { 
@@ -1355,52 +1360,31 @@ class Tank extends Sprite {
     }
   
   HashMap checkForward() {
-    Direction dir = this.getDirection();
     HashMap<Sprite, PVector> sighted = new HashMap<Sprite, PVector>();
-      int x = 0, y = 0;
-        if (dir == Direction.NORTH || dir == Direction.NORTHWEST || dir == Direction.NORTHEAST) {
-          y = 50;
-        } else if (dir == Direction.SOUTH || dir == Direction.SOUTHWEST || dir == Direction.SOUTHEAST) {
-          y = -50;
-        } 
 
-        if(dir == Direction.WEST || dir == Direction.SOUTHWEST || dir == Direction.NORTHWEST) {
-          x = -50;
-        } else if (dir == Direction.EAST || dir == Direction.NORTHEAST || dir == Direction.SOUTHEAST) {
-          x = 50;
-        } 
-        float currX = currentNode.x;
-        float currY = currentNode.y;
-        
-        currX += x;
-        currY += y;
-//***********************************************************************************************************TODO Kolla om inom fiendebas
-        /*
-        while(currX < width && currX > 0 && currY < height &&currY > 0) {
-          PVector near = new PVector(currX, currY);
-          Node forwardNode = grid.getNearestNode(near);
-          if(!(forwardNode.content() == null)) {
-              sighted.put(forwardNode.content(), forwardNode.position);
-              return sighted;
-            } */
-        while(currX < width && currX > 0 && currY < height &&currY > 0) {
-          PVector near = new PVector(currX, currY);
-          Node forwardNode = grid.getNearestNode(near);
-          if(!(forwardNode.content() == null)) {
-              sighted.put(forwardNode.content(), forwardNode.position);
-              return sighted;
-            } else {
-              for(Tree t : allTrees){
-                if(near == t.hitArea) {
-                  sighted.put(t, near);
-                  return sighted;
-                }
-              }
-            }
-          currX += x;
-          currY += y;
-        }
+    for (Tree t : allTrees) {
+      if (checkIfSeesSprite(t)) {
+        sighted.put(t, t.position);
+        return sighted;
+      }
+    }
     return sighted;
+  }
+
+  Boolean checkIfSeesSprite(Sprite other) {
+
+    PVector comparison = PVector.sub(other.position, position);
+
+    // How far is it
+    float d = PVector.dist(position, other.position);
+
+    // What is the angle between the other boid and this one's current direction
+    float diff = PVector.angleBetween(comparison, velocity);
+
+    if (diff < periphery && d >= 0 && d < sightDistance) {
+      return true;
+    }
+    return false;
   }
   
     Direction getDirection() {
@@ -1593,6 +1577,7 @@ class Tank extends Sprite {
     HashMap view = this.checkForward();
 
     if (!view.isEmpty()) {
+
       PVector obstacle_pos = (PVector) view.values().stream().findFirst().get();
       Sprite obstacle = (Sprite) view.keySet().stream().findFirst().get();
       float desiredseparation = this.diameter;
@@ -1610,7 +1595,7 @@ class Tank extends Sprite {
         diff.normalize();
         diff.div(d);        // Weight by distance
         steer.add(diff);
-        println("Tank "+ id + "sees: "+ view.keySet().stream().findFirst().get()+ " -------------------------------------------------------------------");
+        println("Tank "+ id + "sees: "+ view.keySet().stream().findFirst().get()+ " ----------------------------------------------------------------------------");
       }
     }
 
@@ -1627,33 +1612,6 @@ class Tank extends Sprite {
   }
  
 
-  // Got from https://forum.processing.org/one/topic/timer-in-processing.html. The class is used to make sure the tank stays still for three seconds after reporting to its homebase 
-  class StopWatchTimer {
-    int startTime = 0, stopTime = 0;
-    boolean running = false;  
-
-
-    void start() {
-      startTime = millis();
-      running = true;
-    }
-    void stop() {
-      stopTime = millis();
-      running = false;
-    }
-    int getElapsedTime() {
-      int elapsed;
-      if (running) {
-        elapsed = (millis() - startTime);
-      } else {
-        elapsed = (stopTime - startTime);
-      }
-      return elapsed;
-    }
-    int seconds() {
-      return (getElapsedTime() / 1000) % 60;
-    }
-  }
 }
 
 
