@@ -1,6 +1,6 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -125,7 +125,12 @@ class Tank extends Sprite {
 
     this.startpos = new PVector(_startpos.x, _startpos.y);
     this.position = new PVector(this.startpos.x, this.startpos.y);
-    this.velocity = new PVector(0, 0);
+    //********************************************************************** OBSOBSOBS
+    if(this.team_id == 0){
+      this.velocity = new PVector(random(-1, 1), random(-1, 1));
+    } else {
+     velocity = new PVector(0, 0);
+    }
 
     this.acceleration = new PVector(0, 0);
     this.positionPrev = new PVector(this.position.x, this.position.y); //spara temp senaste pos.
@@ -1362,47 +1367,73 @@ class Tank extends Sprite {
     }*/
 
   HashMap checkForward() {
-    HashMap<Sprite, PVector> sighted = new HashMap<Sprite, PVector>();
     ArrayList<Sprite> allEnemiesAndTrees = fillList();
-    
+    HashMap<Sprite, PVector> sighted = new HashMap<Sprite, PVector>();
     
 //***********************************************************************************************************TODO Kolla om inom fiendebas
 
 
-// https://stackoverflow.com/questions/40779343/java-loop-through-all-pixels-in-a-2d-circle-with-center-x-y-and-radius
+//http://rosettacode.org/wiki/Bitmap/Midpoint_circle_algorithm#Java
+              
               for(Sprite s : allEnemiesAndTrees){   
-                for (float i = s.position.y-s.radius; i < s.position.y+s.radius; i++) {
-                    for (float j = s.position.x; (Math.pow((j - s.position.x), 2) + Math.pow((i - s.position.y), 2)) <= Math.pow(s.radius, 2); j--) {
-                        PVector comp = new PVector(i, j);
-                        PVector comparision = PVector.sub(comp, this.position);
-                        float d = PVector.dist(this.position, s.position);
-                        float diff = PVector.angleBetween(comparision, this.velocity);
-                          if (diff < periphery && d > 0 && d < sightDistance) {
-                             sighted.put(s, comp); 
-                             if(s.getName() == "tree") {
-                                 println(sighted);
-                                 pause = true;
-                              }
-                             return sighted;
-                          }
-                        }
-                    for (float j = s.position.x +1; (j-s.position.x)*(j-s.position.x) + (i-s.position.y)*(i-s.position.y) <= s.radius*s.radius; j++) {
-                        PVector comp = new PVector(i, j);
-                        PVector comparision = PVector.sub(comp, this.position);
-                        float d = PVector.dist(this.position, s.position);
-                        float diff = PVector.angleBetween(comparision, this.velocity);
-                          if (diff < periphery && d > 0 && d < sightDistance) {
-                             sighted.put(s, comp); 
-                             if(s.getName() == "tree") {
-                                 println(sighted + "  " + this.id);
-                                 pause = true;
-                              }
-                             return sighted;
-                          }
-                    }
-                  }
+                    float d = (5 - s.radius * 4)/4;
+                    float x = 0;
+                    float y = s.radius;
+                 
+                    do {
+                      if (checkCollision(s.position.x + x, s.position.y + y)) {
+                        PVector near = new PVector(s.position.x+x, s.position.y + y);
+                        sighted.put(s, near);
+                      }
+                      if (checkCollision(s.position.x + x, s.position.y - y)){
+                        PVector near = new PVector(s.position.x+x, s.position.y - y);
+                        sighted.put(s, near);
+                      }
+                      if (checkCollision(s.position.x - x, s.position.y + y)) {
+                        PVector near = new PVector(s.position.x-x, s.position.y + y);
+                        sighted.put(s, near);
+                      }
+                      if(checkCollision(s.position.x - x, s.position.y - y)){
+                        PVector near = new PVector(s.position.x-x, s.position.y - y);
+                        sighted.put(s, near);
+                      }                        
+                      if(checkCollision(s.position.x + y, s.position.y + x)){
+                        PVector near = new PVector(s.position.x+y, s.position.y + x);
+                        sighted.put(s, near);
+                      }                        
+                      if(checkCollision(s.position.x + y, s.position.y - x)) {
+                        PVector near = new PVector(s.position.x+y, s.position.y + x);
+                        sighted.put(s, near);
+                      }                        
+                      if(checkCollision(s.position.x - y, s.position.y + x)){
+                        PVector near = new PVector(s.position.x-y, s.position.y + x);
+                        sighted.put(s, near);
+                      }                        
+                      if(checkCollision(s.position.x - y, s.position.y - x)){
+                        PVector near = new PVector(s.position.x-y, s.position.y -x);
+                        sighted.put(s, near);
+                      }                        
+                      if (d < 0) {
+                        d += 2 * x + 1;
+                      } else {
+                        d += 2 * (x - y) + 1;
+                        y--;
+                      }
+                      x++;
+                    } while (x <= y);
               }
-              return sighted;
+         return sighted;
+  }
+  
+  Boolean checkCollision(float x, float y){
+    PVector comp = new PVector(x, y);
+    PVector comparision = PVector.sub(comp, this.position);
+    float d = PVector.dist(this.position, comp);
+    float diff = PVector.angleBetween(comparision, this.velocity);
+      if (diff < periphery && d > 0 && d < sightDistance) {
+        return true;
+      }
+      return false;
   }
                  
               
@@ -1546,7 +1577,7 @@ class Tank extends Sprite {
       steer.div((float)count);
     }
 
-    // As long as the vector is greater than 0
+    // As long as the vector is greater than 0 //<>//
     if (steer.mag() > 0) {
       // Implement Reynolds: Steering = Desired - Velocity
       steer.normalize();
