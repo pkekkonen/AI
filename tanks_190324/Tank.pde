@@ -1,6 +1,6 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -98,6 +98,7 @@ class Tank extends Sprite {
 
   protected ArrayList<Sensor> mySensors = new ArrayList<Sensor>();
   float periphery = PI/314;
+  float sightDistance = 1100;
 
   // List of traversed areas
   private HashMap<Node, Integer> patrolled = new HashMap<Node, Integer>();
@@ -887,8 +888,8 @@ class Tank extends Sprite {
   //**************************************************
   // Called from game
   final void update() {
-
     // Om tanken fortfarande lever.
+    
     if (!this.isDestroyed) {
       // Om tanken har blivit träffad och håller på och snurrar runt.
       int spinning_speed = 5;
@@ -1250,7 +1251,7 @@ class Tank extends Sprite {
       //  }
       //}
     }
-    arc(0, 0, 750*2, 750*2, -periphery, periphery);
+    arc(0, 0, sightDistance*2, sightDistance*2, -periphery, periphery);
 
     popMatrix();  
 
@@ -1357,67 +1358,39 @@ class Tank extends Sprite {
     }
 
   HashMap checkForward() {
-    Direction dir = this.getDirection();
     HashMap<Sprite, PVector> sighted = new HashMap<Sprite, PVector>();
-      int x = 0, y = 0;
-        if (dir == Direction.NORTH || dir == Direction.NORTHWEST || dir == Direction.NORTHEAST) {
-          y = 50;
-        } else if (dir == Direction.SOUTH || dir == Direction.SOUTHWEST || dir == Direction.SOUTHEAST) {
-          y = -50;
-        } 
-
-        if(dir == Direction.WEST || dir == Direction.SOUTHWEST || dir == Direction.NORTHWEST) {
-          x = -50;
-        } else if (dir == Direction.EAST || dir == Direction.NORTHEAST || dir == Direction.SOUTHEAST) {
-          x = 50;
-        } 
-        float currX = currentNode.x;
-        float currY = currentNode.y;
-        
-        currX += x;
-        currY += y;
+    ArrayList<Sprite> allEnemiesAndTrees = fillList();
+    
+    
 //***********************************************************************************************************TODO Kolla om inom fiendebas
-        /*
-        while(currX < width && currX > 0 && currY < height &&currY > 0) {
-          PVector near = new PVector(currX, currY);
-          Node forwardNode = grid.getNearestNode(near);
-          if(!(forwardNode.content() == null)) {
-              sighted.put(forwardNode.content(), forwardNode.position);
+
+              for(Sprite s : allEnemiesAndTrees){   
+                for(int i = 0; i < s.radius; i++){
+                  PVector comparision = PVector.sub(s.position, this.position);
+                  float d = PVector.dist(this.position, s.position);
+                  float diff = PVector.angleBetween(comparision, this.velocity);
+                    if (diff < periphery && d > 0 && d < sightDistance) {
+                       sighted.put(s, position); 
+                       return sighted;
+                    }
+                }
+              }
               return sighted;
-            } */
-        while(currX < width && currX > 0 && currY < height &&currY > 0) {
-          PVector near = new PVector(currX, currY);
-          Node forwardNode = grid.getNearestNode(near);
-          if(!(forwardNode.content() == null)) {
-              sighted.put(forwardNode.content(), forwardNode.position);
-              return sighted;
-            } else {
-              for(Tree t : allTrees){
-                /*
-                PVector comparision = PVector.sub(t.position, near);
-                float d = PVector.dist(near, t.position);
-                float diff = PVector.angleBetween(comparision, velocity);*/
-                //println("Herebe curr x " + currX + " t.position.x +t-radius " +(t.position.x + t.radius));
-                //println("Herebe curr y " + currY + " t.position.y +t-radius " +(t.position.y + t.radius));
-                // if(currX < (t.position.x + t.radius) && currY < (t.position.y + t.radius) &&
-                //       currX > (t.position.x-t.radius) && currY > (t.position.y-t.radius)){
-                  if(t.checkCollision(this, near)) {
-                          sighted.put(t, near);
-                          /*
-                          if (this.team_id == 0){
-                              println(sighted);
-                              pause = true;
-                          }
-                          */
-                          return sighted;
-                          }
-                        }
-                      }
-                    currX += x;
-                    currY += y;
-                  }
-              return sighted;
-            }
+  }
+                 
+              
+   ArrayList fillList(){
+     ArrayList<Sprite> list = new ArrayList<Sprite>(6);
+      for (Tank t : allTanks) {
+         if(t.team_id != this.team_id){
+           list.add(t);
+         }
+      }
+      for(Tree tree : allTrees){
+        list.add(tree);
+      }
+      return list;
+    }
   
     Direction getDirection() {
     float heading = this.getHeadingInDegrees();
@@ -1463,9 +1436,9 @@ class Tank extends Sprite {
     PVector ali = align(flock);      // Alignment
     PVector coh = cohesion(flock);   // Cohesion
     PVector targ = seek_heur_target(target_from);
-    target = target_from;
                   //println("TARGET in tank :    "+target);
     PVector avoidObstacles = avoidObstacles();
+    this.target = target_from;
     // Arbitrarily weight these forces
     sep.mult(2.8);
     ali.mult(1.0);
@@ -1484,9 +1457,9 @@ class Tank extends Sprite {
   
   Boolean checkIfRotating() {
       PVector targ = PVector.add(this.position,this.velocity);
-      //println("VELOCITY "+id+ " :  " +this.velocity);
-      //println("POSITION "+id+ " :  " +this.position);
-      //println(targ);
+      println("VELOCITY "+id+ " :  " +this.velocity);
+      println("POSITION "+id+ " :  " +this.position);
+      println(targ);
       this.hasTarget = true;
       //this.targetPosition.set(targ);
       rotateTo(PVector.add(this.position,this.velocity));
@@ -1522,7 +1495,7 @@ class Tank extends Sprite {
   }
 
   // Separation
-  // Method checks for nearby tanks and steers away
+  // Method checks for nearby friendly tanks and steers away
   PVector separate (ArrayList<Tank> tanks) {
     float desiredseparation = this.radius*3;
     PVector steer = new PVector(0,0,0);
@@ -1604,7 +1577,7 @@ class Tank extends Sprite {
       return new PVector(0,0);
     }
   }
-  
+   //<>//
    PVector avoidObstacles () {
     PVector steer = new PVector(0,0,0);
     HashMap view = this.checkForward();
@@ -1631,6 +1604,7 @@ class Tank extends Sprite {
         diff.div(d);        // Weight by distance
         steer.add(diff);
         println("Tank "+ id + "sees: "+ obstacle.getName()+ " at " + obstacle_pos + " -------------------------------------------------------------------");
+        pause = true;
       }
     }
 
