@@ -61,7 +61,8 @@ class Team {
   void messageSuccessfulHit() {
     this.numberOfHits += 1;
   }
-  //200 is 225 - treenodes and then some. 
+  //200 is 225 - treenodes and then some.
+  // används för att beräkna vad teamen har för poäng, och ska vara lika många som antalet noder de utforskat. 
   void points() {
     int highestAmount = 200;
     Set<Node> l = patrolled.keySet();
@@ -75,6 +76,8 @@ class Team {
   void updateLogic() {
   }
 
+//startar patrulleringen genom att välja ut ett target och använda flock(). Fortsätter på samma sätt tills tanksen ska sluta patrullera(aldrig).
+//Gör kontroll ifall target har nåtts och väljer då ett nytt. 
   void startPatrolling() {
     target = getNextTarget();
     flock(target);
@@ -107,6 +110,7 @@ class Team {
     .start();
   }
 
+//flock skickar med ett target till samtliga tanks i teamet, där den utför flock() i tank-klassen
   void flock(Node target) {
     for (Tank t : tanks) {
       //t.moveTo(new PVector(target.x, target.y));
@@ -116,6 +120,8 @@ class Team {
     
   }
   
+    //Returnerar nästa mål baserat på vilken av noderna som har lägst värde, om noden ej är patrullerad så returneras den direkt
+  //Slumpfaktor är tillsatt för att testa att agenten agerar korrekt i olika rutter
   Node getNextTarget() {
     Node currentNode = grid.getNearestNode(getAveragePosition());
     ArrayList<Node> neighbors = getNeighboringNodes(currentNode); 
@@ -133,6 +139,7 @@ class Team {
     return target;
   }
   
+  //används för att visa hur fördelningen av poäng hanteras
   void showGrid() {
     System.out.println(target.x + " " + target.y);
     System.out.println(getAveragePosition());
@@ -154,6 +161,7 @@ class Team {
     System.out.println();
   }
 
+// get average position of the three tanks in one team
   PVector getAveragePosition() {
     PVector sum = new PVector();
     for (Tank t : tanks) {
@@ -173,7 +181,7 @@ class Team {
   }
   */
   
-
+  //Returnerar alla närliggande noder till noden current
   ArrayList<Node> getNeighboringNodes(Node current) {
     ArrayList<Node> neighbors = new ArrayList<Node>(); 
     for (int i = -1; i < 2; i++) {
@@ -192,6 +200,7 @@ class Team {
     return neighbors;
   }
 
+  //Denna metod kollar alla grannar hos en nod och kollar om deras värde är dess värde är dess värde plus 1, eller lägre, och ändrar om inte.
   void backPropagate(Node n, int i) {
     for (Node temp : getNeighboringNodes(n)) {
       if (patrolled.containsKey(temp) && (patrolled.get(temp) == -1 || (patrolled.get(temp) > i+1 && patrolled.get(temp) != Integer.MAX_VALUE))) {
@@ -200,6 +209,8 @@ class Team {
       }
     }
   }
+
+  //Denna metod kollar en nods alla grannar, om nån av dem är opatrullerad får noden värdet 1, då den är 1 steg från ett mål
 
   void assignCostValue(ArrayList<Node> finished, Node n) {
     ArrayList<Node> neighbors = getNeighboringNodes(n);
