@@ -1,6 +1,6 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -130,6 +130,7 @@ class Tank extends Sprite {
     } else {
       velocity = new PVector(0, 0);
     }
+    
 
     this.acceleration = new PVector(0, 0);
     this.positionPrev = new PVector(this.position.x, this.position.y); //spara temp senaste pos.
@@ -729,28 +730,19 @@ class Tank extends Sprite {
     this.targetHeading = this.heading; // Tanks har alltid en heading mot ett target.
     this.hasTarget = false;
   }
-  int count = 0;
 
   //**************************************************
+  // taken from Nature of Code, example 6.19
   void updatePosition() {
     this.positionPrev.set(this.position); // spara senaste pos.
-    if (this.team_id == 0) {/*
-      println("positionen " + this.position + " hos tank " + this.id);
-     println("acceleration " + this.acceleration + " hos tank " + this.id);
-     println("velocity " + this.velocity + " hos tank " + this.id);*/
-    }
     this.velocity.add(this.acceleration);
     this.velocity.limit(this.maxspeed);
     this.position.add(this.velocity);
     this.acceleration.mult(0);
-    count++;
-    if (count % 10 == 0) {
-      //    pause = true;
-    }
   }
 
   //**************************************************
-  // Newton's law: F = M * A
+    // taken from Nature of Code, example 6.19
   void applyForce(PVector force) {
     this.acceleration.add(force);
   }
@@ -998,6 +990,8 @@ class Tank extends Sprite {
   }
 
   //**************************************************
+  // checks wether a node's content is null or not. 
+  // used in team, for making sure the tank does not choose a target were a tank currently is or a tree is. 
   void updateContent() {
     if (!(this.lastVisitedNode == null)) {
       grid.removeContent(this.lastVisitedNode);
@@ -1393,6 +1387,7 @@ class Tank extends Sprite {
   }
 
   //checks if a sprite is within cone of sight. 
+  // cone of sight is used from Nature of Code, example 6.17
   Boolean checkCollision(float x, float y) {
     PVector comp = new PVector(x, y);
     PVector comparision = PVector.sub(comp, this.position);
@@ -1609,7 +1604,7 @@ class Tank extends Sprite {
   PVector avoidObstacles () {
     PVector steer = new PVector(0, 0, 0);
     HashMap view = this.getView(); // Get view of what's ahead of tank
-
+ //<>//
     if (!view.isEmpty()) {
       PVector obstacle_pos = (PVector) view.values().stream().findFirst().get(); // Get the vector of the obstacle
       Sprite obstacle = (Sprite) view.keySet().stream().findFirst().get(); // Get the obstacle itself
@@ -1633,13 +1628,14 @@ class Tank extends Sprite {
         diff.normalize();
         diff.div(d);        // Weight by distance
         steer.add(diff);
-        println("Tank "+ id + "sees: "+ obstacle.getName()+ " at " + obstacle_pos);
+        //println("Tank "+ id + "sees: "+ obstacle.getName()+ " at " + obstacle_pos);
       }
     } 
     // As long as the vector is greater than 0
     if (steer.mag() > 0) {
       // Implement Reynolds: Steering = Desired - Velocity
       steer.normalize();
+      //steer.mult(maxspeed); //<>//
       steer.mult(maxspeed);
       steer.sub(velocity);
       steer.limit(maxforce);
