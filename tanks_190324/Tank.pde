@@ -1,4 +1,4 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
 import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
@@ -1259,7 +1259,7 @@ class Tank extends Sprite {
       //  }
       //}
     }
-    arc(0, 0, sightDistance*2, sightDistance*2, -periphery, periphery);
+ //   arc(0, 0, sightDistance*2, sightDistance*2, -periphery, periphery);
 
     popMatrix();  
 
@@ -1300,9 +1300,9 @@ class Tank extends Sprite {
       textSize(14);
       text(this.id+":"+this.health, this.position.x + this.radius, this.position.y + this.radius);
 
-      if (this.hasTarget) {
+      if (obst != null) {
         strokeWeight(1);
-        line(this.position.x, this.position.y, this.targetPosition.x, targetPosition.y);
+        line(this.position.x, this.position.y, this.obst.x, obst.y);
       }
     }
   }
@@ -1336,35 +1336,6 @@ class Tank extends Sprite {
       }
     }
   }
-
-  //Kollar om någon av fiendetankerna är framför tankens synfält
-  /*
-  void checkTankForward(Tank other) {
-    if (!enemyNodes.contains(grid.getNearestNode(position))) {
-      return;
-    }
-    PVector viewForward = PVector.add(position, new PVector((float)Math.cos(heading), (float)Math.sin(heading)).mult(this.diameter*2)); 
-      PVector distanceVect = PVector.sub(other.position, viewForward); 
-      float distanceVectMag = distanceVect.mag(); 
-      float minDistance = this.radius + other.radius; 
-      if (distanceVectMag <= minDistance) {
-        tankAhead = true;
-      }
-    }
-  
-    //Kollar om någon av fiendetankerna är framför tankens synfält
-  void checkTankForward() {
-    HashMap sighted = checkForward();
-    if(sighted.containsKey("tank")) { 
-      PVector near = (PVector) sighted.get("tank");
-      Node n = grid.getNearestNode(near);
-      Tank other = (Tank) n.content();
-        if(other.team_id != this.team_id) { 
-          //println("*** Tank[" + this.id+"] " + sighted);
-          tankAhead = true;
-        }
-      }
-    }*/
 
   HashMap checkForward() {
     ArrayList<Sprite> allEnemiesAndTrees = fillList();
@@ -1486,6 +1457,7 @@ class Tank extends Sprite {
     }
   }
   
+  PVector obst;
   
     // We accumulate a new acceleration each time based on five rules
   void flock(Node target_from) {
@@ -1502,7 +1474,7 @@ class Tank extends Sprite {
     ali.mult(1.0);
     coh.mult(1.0);
     targ.mult(1.5);
-    avoidObstacles.mult(2);
+    avoidObstacles.mult(60);
     // Add the force vectors to acceleration
     applyForce(sep);
     applyForce(ali);
@@ -1642,6 +1614,7 @@ class Tank extends Sprite {
 
     if (!view.isEmpty()) {
       PVector obstacle_pos = (PVector) view.values().stream().findFirst().get();
+      obst =obstacle_pos;
       Sprite obstacle = (Sprite) view.keySet().stream().findFirst().get();
       float desiredseparation = this.diameter;
       if(obstacle.getName() == "tree")
@@ -1662,8 +1635,9 @@ class Tank extends Sprite {
         diff.div(d);        // Weight by distance
         steer.add(diff);
         println("Tank "+ id + "sees: "+ obstacle.getName()+ " at " + obstacle_pos + " -------------------------------------------------------------------");
-        pause = true;
       }
+    } else {
+     obst = null; 
     }
 
 
@@ -1680,33 +1654,6 @@ class Tank extends Sprite {
   }
  
 
-  // Got from https://forum.processing.org/one/topic/timer-in-processing.html. The class is used to make sure the tank stays still for three seconds after reporting to its homebase 
-  class StopWatchTimer {
-    int startTime = 0, stopTime = 0;
-    boolean running = false;  
-
-
-    void start() {
-      startTime = millis();
-      running = true;
-    }
-    void stop() {
-      stopTime = millis();
-      running = false;
-    }
-    int getElapsedTime() {
-      int elapsed;
-      if (running) {
-        elapsed = (millis() - startTime);
-      } else {
-        elapsed = (stopTime - startTime);
-      }
-      return elapsed;
-    }
-    int seconds() {
-      return (getElapsedTime() / 1000) % 60;
-    }
-  }
 }
 
 
