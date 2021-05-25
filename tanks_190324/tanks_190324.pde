@@ -147,7 +147,7 @@ void setup(){
   timer.setDirection("down");
   timer.setTime(startTime);
   teams[0].startPatrolling();
- // teams[1].startPatrolling();
+  teams[1].startPatrolling();
   
   Node[][] nodes = grid.nodes;
 

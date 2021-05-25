@@ -1,3 +1,6 @@
+
+import java.util.*;
+
 class Team {
 
   Tank[] tanks = new Tank[3];
@@ -58,6 +61,16 @@ class Team {
   void messageSuccessfulHit() {
     this.numberOfHits += 1;
   }
+  //200 is 225 - treenodes and then some. 
+  void points() {
+    int highestAmount = 200;
+    Set<Node> l = patrolled.keySet();
+    this.numberOfHits = l.size();
+    if(numberOfHits == highestAmount){
+      println("team "+ id + " wins!!!");
+      gameOver = true;
+    }
+}
 
   void updateLogic() {
   }
@@ -77,7 +90,6 @@ class Team {
               t.lastVisitedNode = t.currentNode;
               t.currentNode = grid.getNearestNode(t.position);
               if(!patrolled.containsKey(t.currentNode) || patrolled.get(t.currentNode) != -1) {
-                numberOfHits++;
                 patrolled.put(t.currentNode, -1);
               }
               assignCostValue(new ArrayList<Node>(), t.currentNode);
@@ -86,6 +98,7 @@ class Team {
           }
           if (patrolled.containsKey(target)) {
             target = getNextTarget();
+                points();
               //println("TARGET :    "+target);
           }
         }

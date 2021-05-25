@@ -1,6 +1,6 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -1518,15 +1518,16 @@ class Tank extends Sprite {
     applyForce(coh);
     applyForce(targ);
     applyForce(avoidObstacles);
-    checkIfRotating();
+    checkRotating();
     //println("positionen " + this.position + " hos tank " + this.id);
   }
 
-  Boolean checkIfRotating() {
-    PVector targ = PVector.add(this.position, this.velocity);
-    println("VELOCITY "+id+ " :  " +this.velocity);
-    println("POSITION "+id+ " :  " +this.position);
-    println(targ);
+// checkRotating changes the rotation to where the tank is planned to go
+  Boolean checkRotating() {
+    //PVector targ = PVector.add(this.position, this.velocity);
+    //println("VELOCITY "+id+ " :  " +this.velocity);
+    //println("POSITION "+id+ " :  " +this.position);
+    //println(targ);
     this.hasTarget = true;
     //this.targetPosition.set(targ);
     rotateTo(PVector.add(this.position, this.velocity));
@@ -1603,7 +1604,7 @@ class Tank extends Sprite {
   PVector align (ArrayList<Tank> tanks) {
     float neighbordist = 300;
     PVector sum = new PVector(0, 0);
-    int count = 0;
+    int count = 0; //<>// //<>// //<>// //<>// //<>// //<>//
     for (Tank other : tanks) {
       float d = PVector.dist(position, other.position);
       if ((d > 0) && (d < neighbordist)) {
@@ -1634,7 +1635,7 @@ class Tank extends Sprite {
       if ((d > 0) && (d < neighbordist)) {
         //println("HÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄR");
         sum.add(other.position); // Add position
-        count++;
+        count++; //<>// //<>// //<>// //<>// //<>// //<>//
       }
     }
     if (count > 0) {
@@ -1676,8 +1677,6 @@ class Tank extends Sprite {
     } else {
       obst = null;
     }
-
-
     // As long as the vector is greater than 0
     if (steer.mag() > 0) {
       // Implement Reynolds: Steering = Desired - Velocity
