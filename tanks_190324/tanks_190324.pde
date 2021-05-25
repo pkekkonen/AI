@@ -207,6 +207,16 @@ void draw() {
    updateTanksDisplay();  
    updateShotsDisplay();
    
+   //Node[][] nodes = grid.nodes;
+   
+   //for(int i = 0; i < nodes.length; i++) {
+   //    for(int j= 0; j < nodes.length; j++) {
+   //      print(nodes[i][j].content+" ");
+   //  }
+   //           println();
+
+   //}
+   
   showGUI();
   
 }
