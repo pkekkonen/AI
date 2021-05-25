@@ -1180,8 +1180,8 @@ class Tank extends Sprite {
         if(obstacle.getName() == "tank") {
           Tank obst = (Tank)obstacle;
           if (obst.team_id != this.team_id && !obst.isDestroyed) {
-              this.stop_state = true;
-              fire();
+            this.stop_state = true;
+            fire();
             }
         }
       }
@@ -1301,14 +1301,21 @@ class Tank extends Sprite {
 
       // Rita ut en linje mot target, och tank-id och tank-hälsa.
       strokeWeight(2);
-      fill(255, 0, 0);
-      stroke(255, 0, 0);
       textSize(14);
       text(this.id+":"+this.health, this.position.x + this.radius, this.position.y + this.radius);
 
       if (obst != null) {
         strokeWeight(1);
+        stroke(0, 255, 0);
+        fill(0, 255, 0);
+        
         line(this.position.x, this.position.y, this.obst.x, obst.y);
+      }
+      if (this.hasTarget) {
+        strokeWeight(1);
+        stroke(255, 0, 0);
+        fill(255, 0, 0);
+        line(this.position.x, this.position.y, this.targetPosition.x, targetPosition.y);
       }
     }
   }
@@ -1454,7 +1461,9 @@ class Tank extends Sprite {
   ArrayList fillList() {
     ArrayList<Sprite> list = new ArrayList<Sprite>(8);
     for (Tank t : allTanks) {
-      list.add(t);
+      if(t != this) {
+        list.add(t);
+      }
     }
     for (Tree tree : allTrees) {
       list.add(tree);
@@ -1540,7 +1549,6 @@ class Tank extends Sprite {
     PVector targ = PVector.add(this.position, this.velocity);
     println("VELOCITY "+id+ " :  " +this.velocity);
     println("POSITION "+id+ " :  " +this.position);
-    println(targ);
     this.hasTarget = true;
     //this.targetPosition.set(targ);
     rotateTo(PVector.add(this.position, this.velocity));
@@ -1669,7 +1677,7 @@ class Tank extends Sprite {
       Sprite obstacle = (Sprite) view.keySet().stream().findFirst().get();
       float desiredseparation = this.diameter;
       if (obstacle.getName() == "tree")
-        desiredseparation += obstacle.radius; //add atleast the radius of the tree to the tanks diameter
+        desiredseparation += this.radius; //add atleast the radius of the tree to the tanks diameter
       else {
         Tank other = (Tank) obstacle;
         if (other.team_id != this.team_id) {
