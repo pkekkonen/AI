@@ -57,7 +57,7 @@ int wait = 3000; //wait 3 sec (reload)
 boolean tick;
 
 Timer timer;
-int startTime = 1; //minutes 
+int startTime = 3; //minutes 
 int remainingTime;
 
 void setup(){
@@ -170,8 +170,7 @@ void draw() {
   checkForInput(); // Kontrollera inmatning.
   
   if (!gameOver && !pause) {
-    // timer används inte i dagsläget.
-   // timer.tick(); // Alt.1
+    timer.tick(); // Alt.1
     float deltaTime = timer.getDeltaSec();
     remainingTime = int(timer.getTotalTime()); 
     if (remainingTime <= 0) {
