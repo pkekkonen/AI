@@ -1,4 +1,4 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
 import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
@@ -594,14 +594,14 @@ class Tank extends Sprite {
 
   //**************************************************
   void moveBy(float x, float y) {
-  //  println("*** Tank["+ this.getId() + "].moveBy(float x, float y)");
+    //  println("*** Tank["+ this.getId() + "].moveBy(float x, float y)");
 
     moveBy(new PVector(x, y));
   }
 
   //**************************************************
   void moveBy(PVector coord) {
-//    println("*** Tank["+ this.getId() + "].moveBy(PVector)");
+    //    println("*** Tank["+ this.getId() + "].moveBy(PVector)");
 
     PVector newCoord = PVector.add(this.position, coord);
     PVector nodevec = grid.getNearestNodePosition(newCoord);
@@ -1168,7 +1168,6 @@ class Tank extends Sprite {
       // Meddela tanken om att kollision med den andra tanken gjorts.
       message_collision(other);
     }
-    checkForward();
     /*
     checkTankForward(other);
      checkTankForward();
@@ -1293,40 +1292,17 @@ class Tank extends Sprite {
       stroke(255, 0, 0);
       textSize(14);
       text(this.id+":"+this.health, this.position.x + this.radius, this.position.y + this.radius);
-
-      if (obst != null) {
-        strokeWeight(1);
-        line(this.position.x, this.position.y, this.obst.x, obst.y);
-      }
     }
   }
 
   //************************************************************************************
 
-
-
-  void showGrid() {
-    for (int i = 0; i < grid.nodes.length; i++) {
-      for (int j = 0; j < grid.nodes[i].length; j++) {
-        if (team.patrolled.containsKey(grid.nodes[j][i])) {
-          if (team.patrolled.get(grid.nodes[j][i]) == Integer.MAX_VALUE) {
-          } else {
-          }
-        } else {
-        }
-      }
-    }
-  }
-
-  HashMap checkForward() {
+  HashMap getView() {
     ArrayList<Sprite> allEnemiesAndTrees = fillList();
     HashMap<Sprite, PVector> sighted = new HashMap<Sprite, PVector>();
     float shortest = 100000;
     PVector closest = null;
     Sprite closestSprite = null;
-
-    //***********************************************************************************************************TODO Kolla om inom fiendebas
-
 
     //http://rosettacode.org/wiki/Bitmap/Midpoint_circle_algorithm#Java
     // checks radius of every Sprite except yourself using Midpoint circle algorithm to iterate through, 
@@ -1416,7 +1392,7 @@ class Tank extends Sprite {
     return sighted;
   }
 
-//checks if a sprite is within cone of sight. 
+  //checks if a sprite is within cone of sight. 
   Boolean checkCollision(float x, float y) {
     PVector comp = new PVector(x, y);
     PVector comparision = PVector.sub(comp, this.position);
@@ -1428,13 +1404,13 @@ class Tank extends Sprite {
     return false;
   }
 
-// fill lista med sprites med alla sprites utom tanken själv
-// och heller inte om någon är camouflaged
+  // fill lista med sprites med alla sprites utom tanken själv
+  // och heller inte om någon är camouflaged
   ArrayList fillList() {
     ArrayList<Sprite> list = new ArrayList<Sprite>(8);
     for (Tank t : allTanks) {
       if (t != this) {
-        if(t.team_id != this.team_id && t.isAtHomebase && !inEnemyBase(this, t)){
+        if (t.team_id != this.team_id && t.isAtHomebase && !inEnemyBase(this, t)) {
         }
         list.add(t);
       }
@@ -1444,19 +1420,19 @@ class Tank extends Sprite {
     }
     return list;
   }
-  
+
   //used SOLELY for fillList to check if the tank being looked at is in fact, not at all being looked at because it is in it's camp and camouflaged
-   Boolean inEnemyBase(Tank me, Tank other){   
+  Boolean inEnemyBase(Tank me, Tank other) {   
     if (
       me.position.x > other.team.homebase_x && 
       me.position.x < other.team.homebase_x+other.team.homebase_width &&
       me.position.y > other.team.homebase_y &&
       me.position.y < other.team.homebase_y+other.team.homebase_height) {
-        return true;
+      return true;
     } else {
       return false;
     }
-   }
+  }
 
   Direction getDirection() {
     float heading = this.getHeadingInDegrees();
@@ -1479,59 +1455,43 @@ class Tank extends Sprite {
       return Direction.EAST;
     }
   }
-
-
-  // Check if the Node current is within homebase
-  boolean isNodeInHomeBase(Node current) {
-    if (
-      current.x > team.homebase_x && 
-      current.x <= team.homebase_x+team.homebase_width &&
-      current.y > team.homebase_y &&
-      current.y <= team.homebase_y+team.homebase_height) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  PVector obst;
-
+  
+  // Implementation based on code from https://github.com/hardmaru/The-Nature-of-Code-Examples/tree/master/chp6_agents/box2d/Flocking_box2d
   // We accumulate a new acceleration each time based on five rules
   void flock(Node target_from) {
+    
     ArrayList<Tank> flock = new ArrayList(Arrays.asList(team.tanks));
+    
     PVector sep = separate(flock);   // Separation
     PVector ali = align(flock);      // Alignment
     PVector coh = cohesion(flock);   // Cohesion
     PVector targ = seek_heur_target(target_from);
-    //println("TARGET in tank :    "+target);
     PVector avoidObstacles = avoidObstacles();
+    
+    // Get common target from team
     this.target = target_from;
+    
     // Arbitrarily weight these forces
     sep.mult(2.8);
     ali.mult(1.0);
     coh.mult(1.0);
     targ.mult(1.5);
     avoidObstacles.mult(60);
+
     // Add the force vectors to acceleration
     applyForce(sep);
     applyForce(ali);
     applyForce(coh);
     applyForce(targ);
     applyForce(avoidObstacles);
+
     checkRotating();
-    //println("positionen " + this.position + " hos tank " + this.id);
   }
 
-// checkRotating changes the rotation to where the tank is planned to go
-  Boolean checkRotating() {
-    //PVector targ = PVector.add(this.position, this.velocity);
-    //println("VELOCITY "+id+ " :  " +this.velocity);
-    //println("POSITION "+id+ " :  " +this.position);
-    //println(targ);
+  // checkRotating changes the rotation to where the tank is planned to go
+  void checkRotating() {
     this.hasTarget = true;
-    //this.targetPosition.set(targ);
     rotateTo(PVector.add(this.position, this.velocity));
-    return true;
   }
 
   // A method that calculates and applies a steering force towards a target
@@ -1552,7 +1512,7 @@ class Tank extends Sprite {
   PVector seek_heur_target(Node target_from) {
     target = target_from;
     PVector desired = PVector.sub(target_from.position, position);  // A vector pointing from the position to the target
-    //println("desired:  "+desired);
+
     // Normalize desired and scale to maximum speed
     desired.normalize();
     desired.mult(maxspeed);
@@ -1565,9 +1525,10 @@ class Tank extends Sprite {
   // Separation
   // Method checks for nearby friendly tanks and steers away
   PVector separate (ArrayList<Tank> tanks) {
-    float desiredseparation = this.radius*3;
+    float desiredseparation = this.radius*3; // Desired distance between tanks
     PVector steer = new PVector(0, 0, 0);
     int count = 0;
+
     // For every tank in the system, check if it's too close
     for (Tank other : tanks) {
       float d = PVector.dist(position, other.position);
@@ -1587,7 +1548,7 @@ class Tank extends Sprite {
       steer.div((float)count);
     }
 
-    // As long as the vector is greater than 0 //<>//
+    // As long as the vector is greater than 0 
     if (steer.mag() > 0) {
       // Implement Reynolds: Steering = Desired - Velocity
       steer.normalize();
@@ -1595,7 +1556,6 @@ class Tank extends Sprite {
       steer.sub(velocity);
       steer.limit(maxforce);
     }
-    //println(steer + " separate");
     return steer;
   }
 
@@ -1604,9 +1564,9 @@ class Tank extends Sprite {
   PVector align (ArrayList<Tank> tanks) {
     float neighbordist = 300;
     PVector sum = new PVector(0, 0);
-    int count = 0; //<>//
+    int count = 0; 
     for (Tank other : tanks) {
-      float d = PVector.dist(position, other.position);
+      float d = PVector.dist(position, other.position); // distance to other tank
       if ((d > 0) && (d < neighbordist)) {
         sum.add(other.velocity);
         count++;
@@ -1618,7 +1578,7 @@ class Tank extends Sprite {
       sum.mult(maxspeed);
       PVector steer = PVector.sub(sum, velocity);
       steer.limit(maxforce);
-      return steer; //<>// //<>//
+      return steer;
     } else {
       return new PVector(0, 0);
     }
@@ -1627,15 +1587,14 @@ class Tank extends Sprite {
   // Cohesion
   // For the average position (i.e. center) of all nearby tanks, calculate steering vector towards that position
   PVector cohesion (ArrayList<Tank> tanks) {
-    float neighbordist = 300; 
+    float neighbordist = 300; // How close another tank must be for cohesion force to activate
     PVector sum = new PVector(0, 0);   // Start with empty vector to accumulate all positions
     int count = 0;
     for (Tank other : tanks) {
       float d = PVector.dist(position, other.position);
       if ((d > 0) && (d < neighbordist)) {
-        //println("HÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄR");
         sum.add(other.position); // Add position
-        count++; //<>//
+        count++;
       }
     }
     if (count > 0) {
@@ -1646,37 +1605,37 @@ class Tank extends Sprite {
     }
   }
 
+  // Used by flocking method to avoid enemies and trees 
   PVector avoidObstacles () {
     PVector steer = new PVector(0, 0, 0);
-    HashMap view = this.checkForward();
+    HashMap view = this.getView(); // Get view of what's ahead of tank
 
     if (!view.isEmpty()) {
-      PVector obstacle_pos = (PVector) view.values().stream().findFirst().get();
-      obst =obstacle_pos;
-      Sprite obstacle = (Sprite) view.keySet().stream().findFirst().get();
+      PVector obstacle_pos = (PVector) view.values().stream().findFirst().get(); // Get the vector of the obstacle
+      Sprite obstacle = (Sprite) view.keySet().stream().findFirst().get(); // Get the obstacle itself
       float desiredseparation = this.diameter;
-      if (obstacle.getName() == "tree")
+      
+      if (obstacle instanceof Tree)
         desiredseparation += obstacle.radius+10; //add atleast the radius of the tree to the tanks diameter
       else {
         Tank other = (Tank) obstacle;
         if (other.team_id != this.team_id) {
-          desiredseparation +=this.diameter; // if it's a enemytank, ad atleast the diameter of the tank besides the tanks diameter          TODO: OBS också FULKODAt :) cause that's how I roll
+          desiredseparation +=this.diameter; // if it's a enemytank, add at least the diameter of the tank besides the tanks diameter
         }
       }
-      float d = PVector.dist(position, obstacle_pos);
+      
+      float d = PVector.dist(position, obstacle_pos); // Distance to object
+      
       // If the distance is greater than 0 and less than an arbitrary amount (0 when you are yourself)
       if ((d > 0) && (d < desiredseparation)) {
-        // Calculate vector pointing away from neighbor
+        // Calculate vector pointing away from object
         PVector diff = PVector.sub(position, obstacle_pos);
-        //println("diff " + diff);
         diff.normalize();
         diff.div(d);        // Weight by distance
         steer.add(diff);
-        println("Tank "+ id + "sees: "+ obstacle.getName()+ " at " + obstacle_pos + " -------------------------------------------------------------------");
+        println("Tank "+ id + "sees: "+ obstacle.getName()+ " at " + obstacle_pos);
       }
-    } else {
-      obst = null;
-    }
+    } 
     // As long as the vector is greater than 0
     if (steer.mag() > 0) {
       // Implement Reynolds: Steering = Desired - Velocity
@@ -1688,13 +1647,11 @@ class Tank extends Sprite {
     //println(steer + " separate");
     return steer;
   }
-  
-
 }
 
 
 private enum Direction {
-  SOUTH, 
+    SOUTH, 
     NORTH, 
     EAST, 
     WEST, 
