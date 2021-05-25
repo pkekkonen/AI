@@ -156,6 +156,7 @@ class Team {
     heading = PVector.angleBetween(getAveragePosition().normalize(), target.position);
   }
   */
+  
 
   ArrayList<Node> getNeighboringNodes(Node current) {
     ArrayList<Node> neighbors = new ArrayList<Node>(); 
