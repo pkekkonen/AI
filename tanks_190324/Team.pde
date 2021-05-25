@@ -32,7 +32,7 @@ class Team {
     this.tank2_startpos.set(tank2_startpos);
 
     this.numberOfHits = 0; 
-
+    
     tanks[0] = new Tank(tank0_id, this, this.tank0_startpos, this.tank_size, ball0);
     tanks[1] = new Tank(tank1_id, this, this.tank1_startpos, this.tank_size, ball1);
     tanks[2] = new Tank(tank2_id, this, this.tank2_startpos, this.tank_size, ball2);
@@ -76,7 +76,10 @@ class Team {
             if (!grid.getNearestNode(t.position).equals(t.currentNode) ) {
               t.lastVisitedNode = t.currentNode;
               t.currentNode = grid.getNearestNode(t.position);
-              patrolled.put(t.currentNode, -1);
+              if(!patrolled.containsKey(t.currentNode) || patrolled.get(t.currentNode) != -1) {
+                numberOfHits++;
+                patrolled.put(t.currentNode, -1);
+              }
               assignCostValue(new ArrayList<Node>(), t.currentNode);
               //showGrid();
             }
