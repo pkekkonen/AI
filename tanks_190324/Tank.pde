@@ -1044,10 +1044,10 @@ class Tank extends Sprite {
     }
 
     if (
-      position.x > team.homebase_x && 
-      position.x < team.homebase_x+team.homebase_width &&
-      position.y > team.homebase_y &&
-      position.y < team.homebase_y+team.homebase_height) {
+      position.x + radius > team.homebase_x && 
+      position.x + radius < team.homebase_x+team.homebase_width &&
+      position.y + radius > team.homebase_y &&
+      position.y + radius < team.homebase_y+team.homebase_height) {
       if (!isAtHomebase) {
         isAtHomebase = true;
 
@@ -1347,6 +1347,8 @@ class Tank extends Sprite {
 
 
     //http://rosettacode.org/wiki/Bitmap/Midpoint_circle_algorithm#Java
+    // checks radius of every Sprite except yourself using Midpoint circle algorithm to iterate through, 
+    // then chooses the closest one which is what the tank sees. 
 
     for (Sprite s : allEnemiesAndTrees) {   
       float d = (5 - s.radius * 4)/4;
@@ -1432,6 +1434,7 @@ class Tank extends Sprite {
     return sighted;
   }
 
+//checks if a sprite is within cone of sight. 
   Boolean checkCollision(float x, float y) {
     PVector comp = new PVector(x, y);
     PVector comparision = PVector.sub(comp, this.position);
@@ -1443,11 +1446,14 @@ class Tank extends Sprite {
     return false;
   }
 
-
+// fill lista med sprites med alla sprites utom tanken själv
+// och heller inte om någon är camouflaged
   ArrayList fillList() {
-    ArrayList<Sprite> list = new ArrayList<Sprite>(6);
+    ArrayList<Sprite> list = new ArrayList<Sprite>(8);
     for (Tank t : allTanks) {
-      if (t.team_id != this.team_id) {
+      if (t != this) {
+        if(t.team_id != this.team_id && t.isAtHomebase && !inEnemyBase(this, t)){
+        }
         list.add(t);
       }
     }
@@ -1456,6 +1462,19 @@ class Tank extends Sprite {
     }
     return list;
   }
+  
+  //used SOLELY for fillList to check if the tank being looked at is in fact, not at all being looked at because it is in it's camp and camouflaged
+   Boolean inEnemyBase(Tank me, Tank other){   
+    if (
+      me.position.x > other.team.homebase_x && 
+      me.position.x < other.team.homebase_x+other.team.homebase_width &&
+      me.position.y > other.team.homebase_y &&
+      me.position.y < other.team.homebase_y+other.team.homebase_height) {
+        return true;
+    } else {
+      return false;
+    }
+   }
 
   Direction getDirection() {
     float heading = this.getHeadingInDegrees();
