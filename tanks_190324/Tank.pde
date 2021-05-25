@@ -1,4 +1,4 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
 import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
@@ -101,7 +101,6 @@ class Tank extends Sprite {
   float sightDistance = 1100;
 
   // List of traversed areas
-  private HashMap<Node, Integer> patrolled = new HashMap<Node, Integer>();
   private ArrayList<Node> homeNodes = new ArrayList<Node>();
   private ArrayList<Node> enemyNodes = new ArrayList<Node>();
   private Node lastVisitedNode;
@@ -199,7 +198,6 @@ class Tank extends Sprite {
     for (int i = 0; i < nodes.length; i++) {
       for (int j = 0; j < nodes[i].length; j++) {
         if (nodes[i][j].x > team.homebase_x && nodes[i][j].x < team.homebase_x+team.homebase_width && nodes[i][j].y > team.homebase_y && nodes[i][j].y < team.homebase_x+team.homebase_height) {
-          patrolled.put(nodes[i][j], -1);
           homeNodes.add(nodes[i][j]);
         } else if (nodes[i][j].x > width-150 && nodes[i][j].x < width && nodes[i][j].y > height-350 && nodes[i][j].y < height) {
           enemyNodes.add(nodes[i][j]);
@@ -1057,10 +1055,7 @@ class Tank extends Sprite {
           timer.start();
           isReporting = false;
           isReportingInHomebase = true;
-          patrolled.put(lastSeenEnemy, Integer.MAX_VALUE);
-          for (Node n : getNeighboringNodes(lastSeenEnemy)) {
-            patrolled.put(n, Integer.MAX_VALUE);
-          }
+
           //showGrid();
         }
         message_arrivedAtHomebase();
@@ -1308,26 +1303,13 @@ class Tank extends Sprite {
 
   //************************************************************************************
 
-  //Returnerar alla närliggande noder till noden current
-  ArrayList<Node> getNeighboringNodes(Node current) {
-    ArrayList<Node> neighbors = new ArrayList<Node>(); 
-    for (int i = -1; i < 2; i++) {
-      for (int j = -1; j < 2; j++) {
-        if ((current.col + i >= 0) && (current.row + j >= 0) && !(i == 0 && j == 0) 
-          && (current.col + i <= 14) && (current.row + j <= 14)) { 
-          Node n = new Node(current.col + i, current.row + j, ((current.col + i)*grid.grid_size+grid.grid_size), ((current.row+j)*grid.grid_size+grid.grid_size)); 
-          neighbors.add(n);
-        }
-      }
-    }
-    return neighbors;
-  }
+
 
   void showGrid() {
     for (int i = 0; i < grid.nodes.length; i++) {
       for (int j = 0; j < grid.nodes[i].length; j++) {
-        if (patrolled.containsKey(grid.nodes[j][i])) {
-          if (patrolled.get(grid.nodes[j][i]) == Integer.MAX_VALUE) {
+        if (team.patrolled.containsKey(grid.nodes[j][i])) {
+          if (team.patrolled.get(grid.nodes[j][i]) == Integer.MAX_VALUE) {
           } else {
           }
         } else {
@@ -1689,10 +1671,7 @@ class Tank extends Sprite {
     return steer;
   }
   
-  // Anropas från team ("hembasen") som radio
-  public void addPatrolledNodeFromOtherTank(Node n) {
-    patrolled.put(n, 0); 
-  }
+
 }
 
 
