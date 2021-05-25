@@ -81,7 +81,7 @@ class Team {
     patrolling = true;
     new Thread() {
       public void run() {
-        while (patrolling && !pause) {
+        while (patrolling) {
           flock(target);
               //println("TARGET :    "+target);
           //setHeading();

@@ -1,6 +1,6 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -1604,7 +1604,7 @@ class Tank extends Sprite {
   PVector align (ArrayList<Tank> tanks) {
     float neighbordist = 300;
     PVector sum = new PVector(0, 0);
-    int count = 0; //<>// //<>// //<>// //<>// //<>// //<>//
+    int count = 0; //<>//
     for (Tank other : tanks) {
       float d = PVector.dist(position, other.position);
       if ((d > 0) && (d < neighbordist)) {
@@ -1635,7 +1635,7 @@ class Tank extends Sprite {
       if ((d > 0) && (d < neighbordist)) {
         //println("HÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄR");
         sum.add(other.position); // Add position
-        count++; //<>// //<>// //<>// //<>// //<>// //<>//
+        count++; //<>//
       }
     }
     if (count > 0) {
@@ -1656,7 +1656,7 @@ class Tank extends Sprite {
       Sprite obstacle = (Sprite) view.keySet().stream().findFirst().get();
       float desiredseparation = this.diameter;
       if (obstacle.getName() == "tree")
-        desiredseparation += obstacle.radius; //add atleast the radius of the tree to the tanks diameter
+        desiredseparation += obstacle.radius+10; //add atleast the radius of the tree to the tanks diameter
       else {
         Tank other = (Tank) obstacle;
         if (other.team_id != this.team_id) {
