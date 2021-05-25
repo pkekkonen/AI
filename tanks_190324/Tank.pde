@@ -124,12 +124,7 @@ class Tank extends Sprite {
 
     this.startpos = new PVector(_startpos.x, _startpos.y);
     this.position = new PVector(this.startpos.x, this.startpos.y);
-    //********************************************************************** OBSOBSOBS
-    if (this.team_id == 0) {
-      this.velocity = new PVector(random(-1, 1), random(-1, 1));
-    } else {
-      velocity = new PVector(0, 0);
-    }
+    this.velocity = new PVector(0, 0);
     
 
     this.acceleration = new PVector(0, 0);
@@ -1604,12 +1599,12 @@ class Tank extends Sprite {
   PVector avoidObstacles () {
     PVector steer = new PVector(0, 0, 0);
     HashMap view = this.getView(); // Get view of what's ahead of tank
- //<>//
+
     if (!view.isEmpty()) {
       PVector obstacle_pos = (PVector) view.values().stream().findFirst().get(); // Get the vector of the obstacle
       Sprite obstacle = (Sprite) view.keySet().stream().findFirst().get(); // Get the obstacle itself
       float desiredseparation = this.diameter;
-      
+       //<>//
       if (obstacle instanceof Tree)
         desiredseparation += obstacle.radius+10; //add atleast the radius of the tree to the tanks diameter
       else {
@@ -1635,12 +1630,12 @@ class Tank extends Sprite {
     if (steer.mag() > 0) {
       // Implement Reynolds: Steering = Desired - Velocity
       steer.normalize();
-      //steer.mult(maxspeed); //<>//
+      //steer.mult(maxspeed);
       steer.mult(maxspeed);
       steer.sub(velocity);
       steer.limit(maxforce);
     }
-    //println(steer + " separate");
+    //println(steer + " separate"); //<>//
     return steer;
   }
 }
