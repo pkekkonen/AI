@@ -1173,18 +1173,11 @@ class Tank extends Sprite {
       // Meddela tanken om att kollision med den andra tanken gjorts.
       message_collision(other);
     }
-    //Looks 
-    HashMap view = checkForward();
-    if (!view.isEmpty()){
-        Sprite obstacle = (Sprite) view.keySet().stream().findFirst().get();
-        if(obstacle.getName() == "tank") {
-          Tank obst = (Tank)obstacle;
-          if (obst.team_id != this.team_id && !obst.isDestroyed) {
-              this.stop_state = true;
-              fire();
-            }
-        }
-      }
+    checkForward();
+    /*
+    checkTankForward(other);
+     checkTankForward();
+     */
   }
 
   void setNode() {
@@ -1344,7 +1337,7 @@ class Tank extends Sprite {
   }
 
   HashMap checkForward() {
-    ArrayList<Sprite> allSprites = fillList();
+    ArrayList<Sprite> allEnemiesAndTrees = fillList();
     HashMap<Sprite, PVector> sighted = new HashMap<Sprite, PVector>();
     float shortest = 100000;
     PVector closest = null;
@@ -1355,7 +1348,7 @@ class Tank extends Sprite {
 
     //http://rosettacode.org/wiki/Bitmap/Midpoint_circle_algorithm#Java
 
-    for (Sprite s : allSprites) {   
+    for (Sprite s : allEnemiesAndTrees) {   
       float d = (5 - s.radius * 4)/4;
       float x = 0;
       float y = s.radius;
@@ -1452,9 +1445,11 @@ class Tank extends Sprite {
 
 
   ArrayList fillList() {
-    ArrayList<Sprite> list = new ArrayList<Sprite>(8);
+    ArrayList<Sprite> list = new ArrayList<Sprite>(6);
     for (Tank t : allTanks) {
-      list.add(t);
+      if (t.team_id != this.team_id) {
+        list.add(t);
+      }
     }
     for (Tree tree : allTrees) {
       list.add(tree);
@@ -1502,7 +1497,7 @@ class Tank extends Sprite {
 
   // We accumulate a new acceleration each time based on five rules
   void flock(Node target_from) {
-    ArrayList<Tank> flock = flockFriends();
+    ArrayList<Tank> flock = new ArrayList(Arrays.asList(team.tanks));
     PVector sep = separate(flock);   // Separation
     PVector ali = align(flock);      // Alignment
     PVector coh = cohesion(flock);   // Cohesion
@@ -1524,16 +1519,6 @@ class Tank extends Sprite {
     applyForce(avoidObstacles);
     checkIfRotating();
     //println("positionen " + this.position + " hos tank " + this.id);
-  }
-  
-  ArrayList flockFriends(){
-   ArrayList<Tank> flock = new ArrayList<Tank>();
-   for(Tank t : allTanks) {
-     if(t.team_id == this.team_id && !t.isDestroyed) {
-       flock.add(t);
-     }
-   }
-   return flock;
   }
 
   Boolean checkIfRotating() {
