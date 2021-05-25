@@ -126,10 +126,10 @@ class Tank extends Sprite {
     this.startpos = new PVector(_startpos.x, _startpos.y);
     this.position = new PVector(this.startpos.x, this.startpos.y);
     //********************************************************************** OBSOBSOBS
-    if(this.team_id == 0){
+    if (this.team_id == 0) {
       this.velocity = new PVector(random(-1, 1), random(-1, 1));
     } else {
-     velocity = new PVector(0, 0);
+      velocity = new PVector(0, 0);
     }
 
     this.acceleration = new PVector(0, 0);
@@ -731,23 +731,23 @@ class Tank extends Sprite {
     this.targetHeading = this.heading; // Tanks har alltid en heading mot ett target.
     this.hasTarget = false;
   }
-    int count = 0;
+  int count = 0;
 
   //**************************************************
   void updatePosition() {
     this.positionPrev.set(this.position); // spara senaste pos.
     if (this.team_id == 0) {/*
       println("positionen " + this.position + " hos tank " + this.id);
-      println("acceleration " + this.acceleration + " hos tank " + this.id);
-      println("velocity " + this.velocity + " hos tank " + this.id);*/
+     println("acceleration " + this.acceleration + " hos tank " + this.id);
+     println("velocity " + this.velocity + " hos tank " + this.id);*/
     }
     this.velocity.add(this.acceleration);
     this.velocity.limit(this.maxspeed);
     this.position.add(this.velocity);
     this.acceleration.mult(0);
     count++;
-    if (count % 10 == 0){
-  //    pause = true;
+    if (count % 10 == 0) {
+      //    pause = true;
     }
   }
 
@@ -894,7 +894,7 @@ class Tank extends Sprite {
   // Called from game
   final void update() {
     // Om tanken fortfarande lever.
-    
+
     if (!this.isDestroyed) {
       // Om tanken har blivit träffad och håller på och snurrar runt.
       int spinning_speed = 5;
@@ -923,8 +923,8 @@ class Tank extends Sprite {
 
           /*
           if (patrolling) {
-            keepPatrolling();
-          } */
+           keepPatrolling();
+           } */
 
           // Om tanken är i rörelse.
           if (this.isMoving) {
@@ -997,35 +997,34 @@ class Tank extends Sprite {
       updateContent();
       updatePosition();
     }
+  }
 
-  }
-  
   //**************************************************
-  void updateContent(){
-    if(!(this.lastVisitedNode == null)) {
-         grid.removeContent(this.lastVisitedNode);
+  void updateContent() {
+    if (!(this.lastVisitedNode == null)) {
+      grid.removeContent(this.lastVisitedNode);
     }
-   grid.addContent(this);
-   
-   if(this.id == 1){
-     //showContentGrid();
-   }
+    grid.addContent(this);
+
+    if (this.id == 1) {
+      //showContentGrid();
+    }
   }
-   
+
   //**************************************************
-  void showContentGrid(){
-     Node[][] nodes = grid.nodes;
+  void showContentGrid() {
+    Node[][] nodes = grid.nodes;
     println();
-    for(int i = 0; i < nodes.length; i++) {
-       for(int j= 0; j < nodes.length; j++) {
-         if(!(nodes[j][i].content() == null)) {
-         print(nodes[j][i].content().getName()+" ");
-         }else {
-           print(nodes[j][i].content()+" ");
-         }
-       }
-       println();
-     }
+    for (int i = 0; i < nodes.length; i++) {
+      for (int j= 0; j < nodes.length; j++) {
+        if (!(nodes[j][i].content() == null)) {
+          print(nodes[j][i].content().getName()+" ");
+        } else {
+          print(nodes[j][i].content()+" ");
+        }
+      }
+      println();
+    }
   }
 
   //**************************************************
@@ -1177,8 +1176,8 @@ class Tank extends Sprite {
     checkForward();
     /*
     checkTankForward(other);
-    checkTankForward();
-    */
+     checkTankForward();
+     */
   }
 
   void setNode() {
@@ -1259,7 +1258,7 @@ class Tank extends Sprite {
       //  }
       //}
     }
- //   arc(0, 0, sightDistance*2, sightDistance*2, -periphery, periphery);
+    //   arc(0, 0, sightDistance*2, sightDistance*2, -periphery, periphery);
 
     popMatrix();  
 
@@ -1340,90 +1339,127 @@ class Tank extends Sprite {
   HashMap checkForward() {
     ArrayList<Sprite> allEnemiesAndTrees = fillList();
     HashMap<Sprite, PVector> sighted = new HashMap<Sprite, PVector>();
-    
-//***********************************************************************************************************TODO Kolla om inom fiendebas
+    float shortest = 100000;
+    PVector closest = null;
+    Sprite closestSprite = null;
+
+    //***********************************************************************************************************TODO Kolla om inom fiendebas
 
 
-//http://rosettacode.org/wiki/Bitmap/Midpoint_circle_algorithm#Java
-              
-              for(Sprite s : allEnemiesAndTrees){   
-                    float d = (5 - s.radius * 4)/4;
-                    float x = 0;
-                    float y = s.radius;
-                 
-                    do {
-                      if (checkCollision(s.position.x + x, s.position.y + y)) {
-                        PVector near = new PVector(s.position.x+x, s.position.y + y);
-                        sighted.put(s, near);
-                      }
-                      if (checkCollision(s.position.x + x, s.position.y - y)){
-                        PVector near = new PVector(s.position.x+x, s.position.y - y);
-                        sighted.put(s, near);
-                      }
-                      if (checkCollision(s.position.x - x, s.position.y + y)) {
-                        PVector near = new PVector(s.position.x-x, s.position.y + y);
-                        sighted.put(s, near);
-                      }
-                      if(checkCollision(s.position.x - x, s.position.y - y)){
-                        PVector near = new PVector(s.position.x-x, s.position.y - y);
-                        sighted.put(s, near);
-                      }                        
-                      if(checkCollision(s.position.x + y, s.position.y + x)){
-                        PVector near = new PVector(s.position.x+y, s.position.y + x);
-                        sighted.put(s, near);
-                      }                        
-                      if(checkCollision(s.position.x + y, s.position.y - x)) {
-                        PVector near = new PVector(s.position.x+y, s.position.y + x);
-                        sighted.put(s, near);
-                      }                        
-                      if(checkCollision(s.position.x - y, s.position.y + x)){
-                        PVector near = new PVector(s.position.x-y, s.position.y + x);
-                        sighted.put(s, near);
-                      }                        
-                      if(checkCollision(s.position.x - y, s.position.y - x)){
-                        PVector near = new PVector(s.position.x-y, s.position.y -x);
-                        sighted.put(s, near);
-                      }                        
-                      if (d < 0) {
-                        d += 2 * x + 1;
-                      } else {
-                        d += 2 * (x - y) + 1;
-                        y--;
-                      }
-                      x++;
-                    } while (x <= y);
-              }
-         return sighted;
+    //http://rosettacode.org/wiki/Bitmap/Midpoint_circle_algorithm#Java
+
+    for (Sprite s : allEnemiesAndTrees) {   
+      float d = (5 - s.radius * 4)/4;
+      float x = 0;
+      float y = s.radius;
+
+      do {
+        if (checkCollision(s.position.x + x, s.position.y + y)) {
+          PVector near = new PVector(s.position.x+x, s.position.y + y);
+          if (PVector.dist(near, position) < shortest) {
+            shortest = PVector.dist(near, position);
+            closest = near;
+            closestSprite = s;
+          }
+        }
+        if (checkCollision(s.position.x + x, s.position.y - y)) {
+          PVector near = new PVector(s.position.x+x, s.position.y - y);
+          if (PVector.dist(near, position) < shortest) {
+            shortest = PVector.dist(near, position);
+            closest = near;
+            closestSprite = s;
+          }
+        }
+        if (checkCollision(s.position.x - x, s.position.y + y)) {
+          PVector near = new PVector(s.position.x-x, s.position.y + y);
+          if (PVector.dist(near, position) < shortest) {
+            shortest = PVector.dist(near, position);
+            closest = near;
+            closestSprite = s;
+          }
+        }
+        if (checkCollision(s.position.x - x, s.position.y - y)) {
+          PVector near = new PVector(s.position.x-x, s.position.y - y);
+          if (PVector.dist(near, position) < shortest) {
+            shortest = PVector.dist(near, position);
+            closest = near;
+            closestSprite = s;
+          }
+        }                        
+        if (checkCollision(s.position.x + y, s.position.y + x)) {
+          PVector near = new PVector(s.position.x+y, s.position.y + x);
+          if (PVector.dist(near, position) < shortest) {
+            shortest = PVector.dist(near, position);
+            closest = near;
+            closestSprite = s;
+          }
+        }                        
+        if (checkCollision(s.position.x + y, s.position.y - x)) {
+          PVector near = new PVector(s.position.x+y, s.position.y + x);
+          if (PVector.dist(near, position) < shortest) {
+            shortest = PVector.dist(near, position);
+            closest = near;
+            closestSprite = s;
+          }
+        }                        
+        if (checkCollision(s.position.x - y, s.position.y + x)) {
+          PVector near = new PVector(s.position.x-y, s.position.y + x);
+          if (PVector.dist(near, position) < shortest) {
+            shortest = PVector.dist(near, position);
+            closest = near;
+            closestSprite = s;
+          }
+        }                        
+        if (checkCollision(s.position.x - y, s.position.y - x)) {
+          PVector near = new PVector(s.position.x-y, s.position.y -x);
+          if (PVector.dist(near, position) < shortest) {
+            shortest = PVector.dist(near, position);
+            closest = near;
+            closestSprite = s;
+          }
+        }                        
+        if (d < 0) {
+          d += 2 * x + 1;
+        } else {
+          d += 2 * (x - y) + 1;
+          y--;
+        }
+        x++;
+      } while (x <= y);
+    }
+    if (closest != null)
+      sighted.put(closestSprite, closest);
+    return sighted;
   }
-  
-  Boolean checkCollision(float x, float y){
+
+  Boolean checkCollision(float x, float y) {
     PVector comp = new PVector(x, y);
     PVector comparision = PVector.sub(comp, this.position);
     float d = PVector.dist(this.position, comp);
     float diff = PVector.angleBetween(comparision, this.velocity);
-      if (diff < periphery && d > 0 && d < sightDistance) {
-        return true;
-      }
-      return false;
-  }
-                 
-              
-   ArrayList fillList(){
-     ArrayList<Sprite> list = new ArrayList<Sprite>(6);
-      for (Tank t : allTanks) {
-         if(t.team_id != this.team_id){
-           list.add(t);
-         }
-      }
-      for(Tree tree : allTrees){
-        list.add(tree);
-      }
-      return list;
+    if (diff < periphery && d > 0 && d < sightDistance) {
+      return true;
     }
-  
-    Direction getDirection() {
+    return false;
+  }
+
+
+  ArrayList fillList() {
+    ArrayList<Sprite> list = new ArrayList<Sprite>(6);
+    for (Tank t : allTanks) {
+      if (t.team_id != this.team_id) {
+        list.add(t);
+      }
+    }
+    for (Tree tree : allTrees) {
+      list.add(tree);
+    }
+    return list;
+  }
+
+  Direction getDirection() {
     float heading = this.getHeadingInDegrees();
-      
+
     if ((heading > 22.5) && (heading < 67.6)) {
       return Direction.SOUTHEAST;
     } else if ((heading > 67.5) && (heading < 112.6)) {
@@ -1456,17 +1492,17 @@ class Tank extends Sprite {
       return false;
     }
   }
-  
+
   PVector obst;
-  
-    // We accumulate a new acceleration each time based on five rules
+
+  // We accumulate a new acceleration each time based on five rules
   void flock(Node target_from) {
     ArrayList<Tank> flock = new ArrayList(Arrays.asList(team.tanks));
     PVector sep = separate(flock);   // Separation
     PVector ali = align(flock);      // Alignment
     PVector coh = cohesion(flock);   // Cohesion
     PVector targ = seek_heur_target(target_from);
-                  //println("TARGET in tank :    "+target);
+    //println("TARGET in tank :    "+target);
     PVector avoidObstacles = avoidObstacles();
     this.target = target_from;
     // Arbitrarily weight these forces
@@ -1484,32 +1520,32 @@ class Tank extends Sprite {
     checkIfRotating();
     //println("positionen " + this.position + " hos tank " + this.id);
   }
-  
+
   Boolean checkIfRotating() {
-      PVector targ = PVector.add(this.position,this.velocity);
-      println("VELOCITY "+id+ " :  " +this.velocity);
-      println("POSITION "+id+ " :  " +this.position);
-      println(targ);
-      this.hasTarget = true;
-      //this.targetPosition.set(targ);
-      rotateTo(PVector.add(this.position,this.velocity));
-      return true;
+    PVector targ = PVector.add(this.position, this.velocity);
+    println("VELOCITY "+id+ " :  " +this.velocity);
+    println("POSITION "+id+ " :  " +this.position);
+    println(targ);
+    this.hasTarget = true;
+    //this.targetPosition.set(targ);
+    rotateTo(PVector.add(this.position, this.velocity));
+    return true;
   }
 
   // A method that calculates and applies a steering force towards a target
   // STEER = DESIRED MINUS VELOCITY
   PVector seek(PVector target) {
-    PVector desired = PVector.sub(target,position);  // A vector pointing from the position to the target;esired);
+    PVector desired = PVector.sub(target, position);  // A vector pointing from the position to the target;esired);
     // Normalize desired and scale to maximum speed
     desired.normalize();
     desired.mult(maxspeed);
     // Steering = Desired minus Velocity
-    PVector steer = PVector.sub(desired,velocity);
+    PVector steer = PVector.sub(desired, velocity);
     steer.limit(maxforce);  // Limit to maximum steering force
     return steer;
   }
-  
-    // A method that calculates and applies a steering force towards a target
+
+  // A method that calculates and applies a steering force towards a target
   // STEER = DESIRED MINUS VELOCITY
   PVector seek_heur_target(Node target_from) {
     target = target_from;
@@ -1519,7 +1555,7 @@ class Tank extends Sprite {
     desired.normalize();
     desired.mult(maxspeed);
     // Steering = Desired minus Velocity
-    PVector steer = PVector.sub(desired,velocity);
+    PVector steer = PVector.sub(desired, velocity);
     steer.limit(maxforce);  // Limit to maximum steering force
     return steer;
   }
@@ -1528,15 +1564,15 @@ class Tank extends Sprite {
   // Method checks for nearby friendly tanks and steers away
   PVector separate (ArrayList<Tank> tanks) {
     float desiredseparation = this.radius*3;
-    PVector steer = new PVector(0,0,0);
+    PVector steer = new PVector(0, 0, 0);
     int count = 0;
     // For every tank in the system, check if it's too close
     for (Tank other : tanks) {
-      float d = PVector.dist(position,other.position);
+      float d = PVector.dist(position, other.position);
       // If the distance is greater than 0 and less than an arbitrary amount (0 when you are yourself)
       if ((d > 0) && (d < desiredseparation)) {
         // Calculate vector pointing away from neighbor
-        PVector diff = PVector.sub(position,other.position);
+        PVector diff = PVector.sub(position, other.position);
         //println("diff " + diff);
         diff.normalize();
         diff.div(d);        // Weight by distance
@@ -1565,10 +1601,10 @@ class Tank extends Sprite {
   // For every nearby tank in the system, calculate the average velocity
   PVector align (ArrayList<Tank> tanks) {
     float neighbordist = 300;
-    PVector sum = new PVector(0,0);
+    PVector sum = new PVector(0, 0);
     int count = 0;
     for (Tank other : tanks) {
-      float d = PVector.dist(position,other.position);
+      float d = PVector.dist(position, other.position);
       if ((d > 0) && (d < neighbordist)) {
         sum.add(other.velocity);
         count++;
@@ -1578,11 +1614,11 @@ class Tank extends Sprite {
       sum.div((float)count);
       sum.normalize();
       sum.mult(maxspeed);
-      PVector steer = PVector.sub(sum,velocity);
+      PVector steer = PVector.sub(sum, velocity);
       steer.limit(maxforce);
       return steer; //<>// //<>//
     } else {
-      return new PVector(0,0);
+      return new PVector(0, 0);
     }
   }
 
@@ -1590,10 +1626,10 @@ class Tank extends Sprite {
   // For the average position (i.e. center) of all nearby tanks, calculate steering vector towards that position
   PVector cohesion (ArrayList<Tank> tanks) {
     float neighbordist = 300; 
-    PVector sum = new PVector(0,0);   // Start with empty vector to accumulate all positions
+    PVector sum = new PVector(0, 0);   // Start with empty vector to accumulate all positions
     int count = 0;
     for (Tank other : tanks) {
-      float d = PVector.dist(position,other.position);
+      float d = PVector.dist(position, other.position);
       if ((d > 0) && (d < neighbordist)) {
         //println("HÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄR");
         sum.add(other.position); // Add position
@@ -1604,12 +1640,12 @@ class Tank extends Sprite {
       sum.div(count);
       return seek(sum);  // Steer towards the position
     } else {
-      return new PVector(0,0);
+      return new PVector(0, 0);
     }
   }
-  
-   PVector avoidObstacles () {
-    PVector steer = new PVector(0,0,0);
+
+  PVector avoidObstacles () {
+    PVector steer = new PVector(0, 0, 0);
     HashMap view = this.checkForward();
 
     if (!view.isEmpty()) {
@@ -1617,19 +1653,19 @@ class Tank extends Sprite {
       obst =obstacle_pos;
       Sprite obstacle = (Sprite) view.keySet().stream().findFirst().get();
       float desiredseparation = this.diameter;
-      if(obstacle.getName() == "tree")
+      if (obstacle.getName() == "tree")
         desiredseparation += obstacle.radius; //add atleast the radius of the tree to the tanks diameter
       else {
-          Tank other = (Tank) obstacle;
-          if(other.team_id != this.team_id) {
-              desiredseparation +=this.diameter; // if it's a enemytank, ad atleast the diameter of the tank besides the tanks diameter          TODO: OBS också FULKODAt :) cause that's how I roll
-          }
+        Tank other = (Tank) obstacle;
+        if (other.team_id != this.team_id) {
+          desiredseparation +=this.diameter; // if it's a enemytank, ad atleast the diameter of the tank besides the tanks diameter          TODO: OBS också FULKODAt :) cause that's how I roll
+        }
       }
-      float d = PVector.dist(position,obstacle_pos);
+      float d = PVector.dist(position, obstacle_pos);
       // If the distance is greater than 0 and less than an arbitrary amount (0 when you are yourself)
       if ((d > 0) && (d < desiredseparation)) {
         // Calculate vector pointing away from neighbor
-        PVector diff = PVector.sub(position,obstacle_pos);
+        PVector diff = PVector.sub(position, obstacle_pos);
         //println("diff " + diff);
         diff.normalize();
         diff.div(d);        // Weight by distance
@@ -1637,7 +1673,7 @@ class Tank extends Sprite {
         println("Tank "+ id + "sees: "+ obstacle.getName()+ " at " + obstacle_pos + " -------------------------------------------------------------------");
       }
     } else {
-     obst = null; 
+      obst = null;
     }
 
 
@@ -1652,8 +1688,6 @@ class Tank extends Sprite {
     //println(steer + " separate");
     return steer;
   }
- 
-
 }
 
 
