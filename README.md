@@ -7,7 +7,7 @@ Problemet som åtagits är att tanksen gemensamt ska uppfylla målet att patrull
 
 
 Brister i implementeringen:
-	Tanksen kan röra sig i sidled, och baklänges
+        Tanksen kan röra sig i sidled, och baklänges.
 	Ibland fastnar tanksen.
-	Fastän tanken kan se i en kon, kan den fortfarande bara se det allra närmaste objektet
+	Fastän tanken kan se i en kon, kan den fortfarande bara se det allra närmaste objektet.
 

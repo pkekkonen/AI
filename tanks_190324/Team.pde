@@ -1,3 +1,4 @@
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **/
 
 import java.util.*;
 

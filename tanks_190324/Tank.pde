@@ -1,6 +1,6 @@
-/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **///<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **/ //<>// //<>// //<>//
 
-import java.util.Comparator; //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+import java.util.Comparator; 
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.List;
@@ -10,20 +10,16 @@ import java.util.Arrays;
 
 class Tank extends Sprite {
   int id;
-  //String name; //Sprite
   int team_id;
 
   PVector acceleration;
   PVector velocity;
-  //PVector position; //Sprite
 
   float rotation;
   float rotation_speed;
 
   Team team;
   PImage img;
-  //float diameter; //Sprite
-  //float radius; //Sprite
 
   float maxrotationspeed;
   float maxspeed;
@@ -32,9 +28,7 @@ class Tank extends Sprite {
   int health;// 3 är bra, 2 är mindre bra, 1 är immobilized, 0 är destroyed.
   boolean isImmobilized; // Tanken kan snurra på kanonen och skjuta, men inte förflytta sig.
   boolean isDestroyed; // Tanken är död.
-
-  //PVector hitArea;
-
+  
   PVector startpos;
   PVector positionPrev; //spara temp senaste pos.
 
@@ -97,14 +91,12 @@ class Tank extends Sprite {
   private ArrayList<Sensor> sensors = new ArrayList<Sensor>();
 
   protected ArrayList<Sensor> mySensors = new ArrayList<Sensor>();
+  
+  // Used for view
   float periphery = PI/314;
   float sightDistance = 1100;
 
-  // List of traversed areas
-  private ArrayList<Node> homeNodes = new ArrayList<Node>();
-  private ArrayList<Node> enemyNodes = new ArrayList<Node>();
   private Node lastVisitedNode;
-  private Node lastSeenEnemy;
   PVector vectorTarget; // Used for patrolling
   Direction lastDir; // Used for reporting
 
@@ -189,17 +181,6 @@ class Tank extends Sprite {
 
     this.ball.setColor(this.team.getColor());
     this.ball.setOwner(this);
-
-    Node[][] nodes = grid.getAllNodes();
-    for (int i = 0; i < nodes.length; i++) {
-      for (int j = 0; j < nodes[i].length; j++) {
-        if (nodes[i][j].x > team.homebase_x && nodes[i][j].x < team.homebase_x+team.homebase_width && nodes[i][j].y > team.homebase_y && nodes[i][j].y < team.homebase_x+team.homebase_height) {
-          homeNodes.add(nodes[i][j]);
-        } else if (nodes[i][j].x > width-150 && nodes[i][j].x < width && nodes[i][j].y > height-350 && nodes[i][j].y < height) {
-          enemyNodes.add(nodes[i][j]);
-        }
-      }
-    }
 
     initializeSensors();
   }
@@ -1423,28 +1404,6 @@ class Tank extends Sprite {
       return false;
     }
   }
-
-  Direction getDirection() {
-    float heading = this.getHeadingInDegrees();
-
-    if ((heading > 22.5) && (heading < 67.6)) {
-      return Direction.SOUTHEAST;
-    } else if ((heading > 67.5) && (heading < 112.6)) {
-      return Direction.SOUTH;
-    } else if ((heading > 112.5) && (heading < 157.6)) {
-      return Direction.SOUTHWEST;
-    } else if ((heading > 157.5) && (heading < 202.6)) {
-      return Direction.WEST;
-    } else if ((heading > 202.5) && (heading < 247.6)) {
-      return Direction.NORTHWEST;
-    } else if ((heading > 247.5) && (heading < 292.6)) {
-      return Direction.NORTH;
-    } else if ((heading > 292.5) && (heading < 337.6)) {
-      return Direction.NORTHEAST;
-    } else {
-      return Direction.EAST;
-    }
-  }
   
   // Implementation based on code from https://github.com/hardmaru/The-Nature-of-Code-Examples/tree/master/chp6_agents/box2d/Flocking_box2d
   // We accumulate a new acceleration each time based on five rules
@@ -1638,6 +1597,30 @@ class Tank extends Sprite {
     //println(steer + " separate"); //<>//
     return steer;
   }
+  
+  
+  Direction getDirection() {
+    float heading = this.getHeadingInDegrees();
+
+    if ((heading > 22.5) && (heading < 67.6)) {
+      return Direction.SOUTHEAST;
+    } else if ((heading > 67.5) && (heading < 112.6)) {
+      return Direction.SOUTH;
+    } else if ((heading > 112.5) && (heading < 157.6)) {
+      return Direction.SOUTHWEST;
+    } else if ((heading > 157.5) && (heading < 202.6)) {
+      return Direction.WEST;
+    } else if ((heading > 202.5) && (heading < 247.6)) {
+      return Direction.NORTHWEST;
+    } else if ((heading > 247.5) && (heading < 292.6)) {
+      return Direction.NORTH;
+    } else if ((heading > 292.5) && (heading < 337.6)) {
+      return Direction.NORTHEAST;
+    } else {
+      return Direction.EAST;
+    }
+  }
+  
 }
 
 

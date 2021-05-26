@@ -1,7 +1,4 @@
-/*
-* JUST NU: 
-
-*/
+/** Ida Söderberg, Magnus Palmstierna och Paulina Lagebjer Kekkonen (Grupp 5) **/
 
 // för ljud
 import ddf.minim.*;
