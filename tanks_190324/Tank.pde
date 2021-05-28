@@ -711,6 +711,7 @@ class Tank extends Sprite {
   // taken from Nature of Code, example 6.19
   void updatePosition() {
     this.positionPrev.set(this.position); // spara senaste pos.
+    this.targetPosition.set(PVector.add(this.position, this.velocity));
     this.velocity.add(this.acceleration);
     this.velocity.limit(this.maxspeed);
     this.position.add(this.velocity);
@@ -1262,6 +1263,13 @@ class Tank extends Sprite {
       stroke(255, 0, 0);
       textSize(14);
       text(this.id+":"+this.health, this.position.x + this.radius, this.position.y + this.radius);
+      
+      if (this.hasTarget) {
+        strokeWeight(1);
+        line(this.position.x, this.position.y, this.targetPosition.x, targetPosition.y);
+      }
+      strokeWeight(1);
+      line(this.position.x, this.position.y, this.acceleration.x, this.acceleration.y);
     }
   }
 
@@ -1405,6 +1413,7 @@ class Tank extends Sprite {
     }
   }
   
+  
   // Implementation based on code from https://github.com/hardmaru/The-Nature-of-Code-Examples/tree/master/chp6_agents/box2d/Flocking_box2d
   // We accumulate a new acceleration each time based on five rules
   void flock(Node target_from) {
@@ -1442,7 +1451,7 @@ class Tank extends Sprite {
     this.hasTarget = true;
     rotateTo(PVector.add(this.position, this.velocity));
   }
-
+  
   // A method that calculates and applies a steering force towards a target
   // STEER = DESIRED MINUS VELOCITY
   PVector seek(PVector target) {
@@ -1569,7 +1578,7 @@ class Tank extends Sprite {
       else {
         Tank other = (Tank) obstacle;
         if (other.team_id != this.team_id) {
-          desiredseparation +=this.diameter; // if it's a enemytank, add at least the diameter of the tank besides the tanks diameter
+          desiredseparation += this.diameter; // if it's a enemytank, add at least the diameter of the tank besides the tanks diameter
         }
       }
       
@@ -1577,8 +1586,10 @@ class Tank extends Sprite {
       
       // If the distance is greater than 0 and less than an arbitrary amount (0 when you are yourself)
       if ((d > 0) && (d < desiredseparation)) {
-        // Calculate vector pointing away from object
-        PVector diff = PVector.sub(position, obstacle_pos);
+        // Calculate vector pointing in opposite direction of the obstacle
+        // Nature of code, 6.5 Your Own Desires: Desired Velocity
+        PVector desired = new PVector(maxspeed, velocity.y);
+        PVector diff = PVector.sub(desired, velocity);
         diff.normalize();
         diff.div(d);        // Weight by distance
         steer.add(diff);
